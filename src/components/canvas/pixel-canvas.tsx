@@ -19,8 +19,15 @@ const PixelCanvas: React.FC<PixelCanvasProps> = ({ width, height, palette }) => 
   const [isPanning, setIsPanning] = useState(false);
   const [lastPanPosition, setLastPanPosition] = useState({ x: 0, y: 0 });
   const [selectedColor, setSelectedColor] = useState(palette[0]);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const draw = useCallback(() => {
+    if (!isMounted) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -68,28 +75,34 @@ const PixelCanvas: React.FC<PixelCanvasProps> = ({ width, height, palette }) => 
     ctx.strokeRect(0, 0, width, height);
     
     ctx.restore();
-  }, [width, height, zoom, pan]);
+  }, [width, height, zoom, pan, isMounted]);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const handleResize = () => {
-        if(canvas) {
-            draw();
-        }
-    }
-    window.addEventListener('resize', handleResize);
+    if (!isMounted) return;
 
-    if (canvas && canvas.clientWidth > 0) {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const setInitialView = () => {
+      if (canvas.clientWidth > 0 && canvas.clientHeight > 0) {
         const newZoom = Math.min(canvas.clientWidth / width, canvas.clientHeight / height) * 0.9;
         setZoom(newZoom);
         setPan({
-            x: (canvas.clientWidth - width * newZoom) / 2,
-            y: (canvas.clientHeight - height * newZoom) / 2,
+          x: (canvas.clientWidth - width * newZoom) / 2,
+          y: (canvas.clientHeight - height * newZoom) / 2,
         });
-    }
+      }
+    };
+    
+    setInitialView();
 
+    const handleResize = () => {
+      setInitialView();
+    };
+
+    window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [width, height, draw]);
+  }, [isMounted, width, height]);
 
   useEffect(() => {
     draw();
@@ -144,8 +157,11 @@ const PixelCanvas: React.FC<PixelCanvasProps> = ({ width, height, palette }) => 
 
     const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * zoomFactor));
 
-    const newPanX = mouseX - (mouseX - pan.x) * (newZoom / zoom);
-    const newPanY = mouseY - (mouseY - pan.y) * (newZoom / zoom);
+    const worldX = (mouseX - pan.x) / zoom;
+    const worldY = (mouseY - pan.y) / zoom;
+
+    const newPanX = mouseX - worldX * newZoom;
+    const newPanY = mouseY - worldY * newZoom;
 
     setZoom(newZoom);
     setPan({ x: newPanX, y: newPanY });
@@ -177,16 +193,18 @@ const PixelCanvas: React.FC<PixelCanvasProps> = ({ width, height, palette }) => 
 
 
   return (
-    <canvas
-      ref={canvasRef}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={() => setIsPanning(false)}
-      onWheel={handleWheel}
-      className="w-full h-full bg-muted/50 touch-none"
-      style={{ cursor: isPanning ? 'grabbing' : 'crosshair' }}
-    />
+    <div className="w-full h-full bg-muted/20 overflow-hidden relative">
+      <canvas
+        ref={canvasRef}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={() => setIsPanning(false)}
+        onWheel={handleWheel}
+        className="absolute top-0 left-0 w-full h-full touch-none"
+        style={{ cursor: isPanning ? 'grabbing' : 'crosshair' }}
+      />
+    </div>
   );
 };
 
