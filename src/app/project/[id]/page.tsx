@@ -23,12 +23,9 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 order-2 lg:order-1">
-          <Card className="p-4 shadow-lg">
+          <Card className="shadow-lg h-[calc(100vh-10rem)] overflow-hidden">
             <PixelCanvas width={project.width} height={project.height} palette={project.palette} />
           </Card>
-          <div className="mt-4">
-             <ColorPicker palette={project.palette} />
-          </div>
         </div>
 
         <div className="lg:col-span-1 order-1 lg:order-2 space-y-6">
@@ -63,6 +60,8 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
               )}
             </CardContent>
           </Card>
+
+          <ColorPicker palette={project.palette} />
           
           <Card>
             <CardHeader>
