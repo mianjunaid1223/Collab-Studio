@@ -1,3 +1,5 @@
+'use client';
+
 import { mockProjects, mockUsers } from '@/lib/mock-data';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +11,7 @@ import { Download, Users } from 'lucide-react';
 import { ProjectStatus } from '@/components/project/project-status';
 import PixelCanvas from '@/components/canvas/pixel-canvas';
 import { ColorPicker } from '@/components/canvas/color-picker';
+import { useState } from 'react';
 
 export default function ProjectPage({ params }: { params: { id: string } }) {
   const project = mockProjects.find((p) => p.id === params.id);
@@ -17,6 +20,8 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
     notFound();
   }
 
+  const [selectedColor, setSelectedColor] = useState(project.palette[0]);
+
   const contributors = mockUsers.slice(0, Math.min(mockUsers.length, project.contributorCount)).slice(0, 10);
 
   return (
@@ -24,7 +29,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 order-2 lg:order-1">
           <Card className="shadow-lg h-[calc(100vh-10rem)] overflow-hidden">
-            <PixelCanvas width={project.width} height={project.height} palette={project.palette} />
+            <PixelCanvas width={project.width} height={project.height} palette={project.palette} selectedColor={selectedColor} />
           </Card>
         </div>
 
@@ -61,7 +66,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
             </CardContent>
           </Card>
 
-          <ColorPicker palette={project.palette} />
+          <ColorPicker palette={project.palette} selectedColor={selectedColor} onColorSelect={setSelectedColor} />
           
           <Card>
             <CardHeader>

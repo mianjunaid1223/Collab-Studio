@@ -1,17 +1,16 @@
 'use client';
 
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
 
 interface ColorPickerProps {
   palette: string[];
+  selectedColor: string;
+  onColorSelect: (color: string) => void;
 }
 
-export function ColorPicker({ palette }: ColorPickerProps) {
-  const [selectedColor, setSelectedColor] = useState(palette[0]);
-
+export function ColorPicker({ palette, selectedColor, onColorSelect }: ColorPickerProps) {
   return (
     <Card>
       <CardHeader>
@@ -22,7 +21,7 @@ export function ColorPicker({ palette }: ColorPickerProps) {
           {palette.map((color) => (
             <button
               key={color}
-              onClick={() => setSelectedColor(color)}
+              onClick={() => onColorSelect(color)}
               className={cn(
                 'h-10 w-10 rounded-md border-2 transition-transform transform hover:scale-110 flex items-center justify-center',
                 selectedColor === color ? 'border-primary ring-2 ring-ring' : 'border-muted'
