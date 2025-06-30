@@ -1,3 +1,4 @@
+
 import {
   addDoc,
   collection,
@@ -9,8 +10,7 @@ import {
   query,
   orderBy,
   limit,
-  onSnapshot,
-  writeBatch,
+  onSnapshot
 } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Project, User, Pixel } from './types';
@@ -115,12 +115,25 @@ export async function placePixel(projectId: string, userId: string, x: number, y
 
 export async function getContributors(projectId: string): Promise<User[]> {
     if (!db) return [];
-    // This is a simplified version. A real implementation would be more complex.
-    // It would likely involve aggregating contributor IDs from pixels
-    // and then fetching their profiles. For now, we return an empty list.
-    const mockContributors: User[] = [
-        // This part needs a more robust implementation with Cloud Functions
-        // to avoid heavy client-side reads.
-    ];
-    return mockContributors;
+    
+    // This implementation can be slow and expensive on projects with many pixels.
+    // For a production app, consider using a Cloud Function to aggregate this data.
+    const pixelsRef = collection(db, `projects/${projectId}/pixels`);
+    const querySnapshot = await getDocs(pixelsRef);
+
+    if (querySnapshot.empty) {
+        return [];
+    }
+
+    const contributorIds = new Set<string>();
+    querySnapshot.forEach(doc => {
+        contributorIds.add(doc.data().userId);
+    });
+
+    const contributorProfiles = await Promise.all(
+        Array.from(contributorIds).map(userId => getUserProfile(userId))
+    );
+
+    // Filter out any null profiles (if a user was deleted, for example)
+    return contributorProfiles.filter((user): user is User => user !== null);
 }
