@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback, useImperativeHandle } from 'react';
@@ -25,13 +24,9 @@ const PixelCanvas: React.ForwardRefRenderFunction<PixelCanvasHandle, PixelCanvas
   const [isPanning, setIsPanning] = useState(false);
   const [lastPanPosition, setLastPanPosition] = useState({ x: 0, y: 0 });
   const [pixels, setPixels] = useState<Map<string, string>>(new Map());
-  const [isMounted, setIsMounted] = useState(false);
+  const isMounted = useRef(false);
   const touchCache = useRef<{ distance: number | null }>({ distance: null });
   const touchStartRef = useRef<{x: number, y: number, time: number} | null>(null);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   const clampPan = useCallback((newPan: { x: number; y: number }, currentZoom: number) => {
       const canvas = canvasRef.current;
@@ -57,7 +52,7 @@ const PixelCanvas: React.ForwardRefRenderFunction<PixelCanvasHandle, PixelCanvas
 
 
   const draw = useCallback(() => {
-    if (!isMounted) return;
+    if (!isMounted.current) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -112,22 +107,22 @@ const PixelCanvas: React.ForwardRefRenderFunction<PixelCanvasHandle, PixelCanvas
     ctx.strokeRect(0, 0, width, height);
     
     ctx.restore();
-  }, [width, height, zoom, pan, isMounted, pixels]);
+  }, [width, height, zoom, pan, pixels]);
 
   const setInitialView = useCallback(() => {
-    if (!isMounted) return;
+    if (!isMounted.current) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const { clientWidth, clientHeight } = canvas;
     if (clientWidth > 0 && clientHeight > 0) {
         const newZoom = Math.min(clientWidth / width, clientHeight / height) * 0.9;
         setZoom(newZoom);
-        setPan({
+        setPan(clampPan({
             x: (clientWidth - width * newZoom) / 2,
             y: (clientHeight - height * newZoom) / 2,
-        });
+        }, newZoom));
     }
-  }, [isMounted, width, height]);
+  }, [width, height, clampPan]);
 
 
   useImperativeHandle(ref, () => ({
@@ -137,12 +132,14 @@ const PixelCanvas: React.ForwardRefRenderFunction<PixelCanvasHandle, PixelCanvas
   }));
 
   useEffect(() => {
-    if (isMounted) {
-      setInitialView();
-      window.addEventListener('resize', setInitialView);
-      return () => window.removeEventListener('resize', setInitialView);
-    }
-  }, [isMounted, setInitialView]);
+    isMounted.current = true;
+    setInitialView();
+    window.addEventListener('resize', setInitialView);
+    return () => {
+        window.removeEventListener('resize', setInitialView);
+        isMounted.current = false;
+    };
+  }, [setInitialView]);
 
   useEffect(() => {
     draw();
@@ -175,6 +172,11 @@ const PixelCanvas: React.ForwardRefRenderFunction<PixelCanvasHandle, PixelCanvas
   };
 
   const handleZoom = (e: React.WheelEvent) => {
+    // This makes zooming more intentional.
+    // For trackpads, a pinch gesture often sets e.ctrlKey = true.
+    // For mice, it's Ctrl + Scroll.
+    if (!e.ctrlKey) return;
+    
     e.preventDefault();
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -213,7 +215,8 @@ const PixelCanvas: React.ForwardRefRenderFunction<PixelCanvasHandle, PixelCanvas
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button === 1 || e.ctrlKey) {
+    // Middle mouse button for panning, or Ctrl + Left Click
+    if (e.button === 1 || (e.button === 0 && e.ctrlKey)) {
       e.preventDefault();
       handlePanStart(e.clientX, e.clientY);
     }
