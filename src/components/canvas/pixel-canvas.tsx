@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useImperativeHandle } from 'react';
 
 interface PixelCanvasProps {
   width: number;
@@ -9,11 +10,15 @@ interface PixelCanvasProps {
   selectedColor: string;
 }
 
+export interface PixelCanvasHandle {
+  resetCanvas: () => void;
+}
+
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 40;
 const GRID_COLOR = 'rgba(0,0,0,0.1)';
 
-const PixelCanvas: React.FC<PixelCanvasProps> = ({ width, height, selectedColor }) => {
+const PixelCanvas: React.ForwardRefRenderFunction<PixelCanvasHandle, PixelCanvasProps> = ({ width, height, selectedColor }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -22,10 +27,34 @@ const PixelCanvas: React.FC<PixelCanvasProps> = ({ width, height, selectedColor 
   const [pixels, setPixels] = useState<Map<string, string>>(new Map());
   const [isMounted, setIsMounted] = useState(false);
   const touchCache = useRef<{ distance: number | null }>({ distance: null });
+  const touchStartRef = useRef<{x: number, y: number, time: number} | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  const clampPan = useCallback((newPan: { x: number; y: number }, currentZoom: number) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return newPan;
+
+      const { clientWidth: viewportWidth, clientHeight: viewportHeight } = canvas;
+      const canvasWidth = width * currentZoom;
+      const canvasHeight = height * currentZoom;
+      
+      const margin = 50; 
+
+      const clampedX = Math.max(
+          Math.min(newPan.x, viewportWidth - margin),
+          margin - canvasWidth
+      );
+      const clampedY = Math.max(
+          Math.min(newPan.y, viewportHeight - margin),
+          margin - canvasHeight
+      );
+
+      return { x: clampedX, y: clampedY };
+  }, [width, height]);
+
 
   const draw = useCallback(() => {
     if (!isMounted) return;
@@ -85,27 +114,35 @@ const PixelCanvas: React.FC<PixelCanvasProps> = ({ width, height, selectedColor 
     ctx.restore();
   }, [width, height, zoom, pan, isMounted, pixels]);
 
-  useEffect(() => {
+  const setInitialView = useCallback(() => {
     if (!isMounted) return;
-    
-    const setInitialView = () => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const { clientWidth, clientHeight } = canvas;
-      if (clientWidth > 0 && clientHeight > 0) {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const { clientWidth, clientHeight } = canvas;
+    if (clientWidth > 0 && clientHeight > 0) {
         const newZoom = Math.min(clientWidth / width, clientHeight / height) * 0.9;
         setZoom(newZoom);
         setPan({
-          x: (clientWidth - width * newZoom) / 2,
-          y: (clientHeight - height * newZoom) / 2,
+            x: (clientWidth - width * newZoom) / 2,
+            y: (clientHeight - height * newZoom) / 2,
         });
-      }
-    };
-    
-    setInitialView();
-    window.addEventListener('resize', setInitialView);
-    return () => window.removeEventListener('resize', setInitialView);
+    }
   }, [isMounted, width, height]);
+
+
+  useImperativeHandle(ref, () => ({
+    resetCanvas: () => {
+      setInitialView();
+    }
+  }));
+
+  useEffect(() => {
+    if (isMounted) {
+      setInitialView();
+      window.addEventListener('resize', setInitialView);
+      return () => window.removeEventListener('resize', setInitialView);
+    }
+  }, [isMounted, setInitialView]);
 
   useEffect(() => {
     draw();
@@ -129,7 +166,7 @@ const PixelCanvas: React.FC<PixelCanvasProps> = ({ width, height, selectedColor 
     if (!isPanning) return;
     const dx = clientX - lastPanPosition.x;
     const dy = clientY - lastPanPosition.y;
-    setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+    setPan(prev => clampPan({ x: prev.x + dx, y: prev.y + dy }, zoom));
     setLastPanPosition({ x: clientX, y: clientY });
   };
 
@@ -156,7 +193,7 @@ const PixelCanvas: React.FC<PixelCanvasProps> = ({ width, height, selectedColor 
     const newPanY = mouseY - worldY * newZoom;
 
     setZoom(newZoom);
-    setPan({ x: newPanX, y: newPanY });
+    setPan(clampPan({ x: newPanX, y: newPanY }, newZoom));
   };
 
   const placePixel = (clientX: number, clientY: number) => {
@@ -210,7 +247,9 @@ const PixelCanvas: React.FC<PixelCanvasProps> = ({ width, height, selectedColor 
   const handleTouchStart = (e: React.TouchEvent) => {
     e.preventDefault();
     if (e.touches.length === 1) {
-        handlePanStart(e.touches[0].clientX, e.touches[0].clientY);
+        const touch = e.touches[0];
+        touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+        handlePanStart(touch.clientX, touch.clientY);
     } else if (e.touches.length === 2) {
         setIsPanning(false);
         touchCache.current.distance = getTouchDistance(e.touches);
@@ -239,18 +278,34 @@ const PixelCanvas: React.FC<PixelCanvasProps> = ({ width, height, selectedColor 
         const newPanY = screenY - worldY * newZoom;
 
         setZoom(newZoom);
-        setPan({ x: newPanX, y: newPanY });
+        setPan(clampPan({ x: newPanX, y: newPanY }, newZoom));
         touchCache.current.distance = newDist;
     }
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+      if (e.touches.length === 0 && e.changedTouches.length === 1 && touchStartRef.current) {
+          const touch = e.changedTouches[0];
+          const dx = touch.clientX - touchStartRef.current.x;
+          const dy = touch.clientY - touchStartRef.current.y;
+          const dt = Date.now() - touchStartRef.current.time;
+          
+          if (dt < 250 && Math.sqrt(dx*dx + dy*dy) < 10) {
+              if (isPanning) setIsPanning(false);
+              placePixel(touchStartRef.current.x, touchStartRef.current.y);
+              touchStartRef.current = null;
+              return;
+          }
+      }
+      
       if (isPanning && e.touches.length === 0) {
           handlePanEnd();
       }
+      
       if (e.touches.length < 2) {
         touchCache.current.distance = null;
       }
+      touchStartRef.current = null;
   };
   
   return (
@@ -272,4 +327,4 @@ const PixelCanvas: React.FC<PixelCanvasProps> = ({ width, height, selectedColor 
   );
 };
 
-export default PixelCanvas;
+export default React.forwardRef(PixelCanvas);
