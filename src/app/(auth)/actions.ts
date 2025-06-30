@@ -22,6 +22,8 @@ const loginSchema = z.object({
   password: z.string(),
 });
 
+const FIREBASE_NOT_CONFIGURED_ERROR = "Firebase is not configured. Please add your credentials to a .env.local file.";
+
 async function handleGoogleSignIn(user: import('firebase/auth').User) {
     const userProfile = await getUserProfile(user.uid);
     if (!userProfile) {
@@ -35,6 +37,7 @@ async function handleGoogleSignIn(user: import('firebase/auth').User) {
 
 
 export async function signup(values: z.infer<typeof signupSchema>) {
+  if (!auth) return FIREBASE_NOT_CONFIGURED_ERROR;
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
     await createUserProfile(userCredential.user.uid, {
@@ -48,6 +51,7 @@ export async function signup(values: z.infer<typeof signupSchema>) {
 }
 
 export async function login(values: z.infer<typeof loginSchema>) {
+  if (!auth) return FIREBASE_NOT_CONFIGURED_ERROR;
   try {
     await signInWithEmailAndPassword(auth, values.email, values.password);
   } catch (error: any) {
@@ -56,6 +60,7 @@ export async function login(values: z.infer<typeof loginSchema>) {
 }
 
 export async function loginWithGoogle() {
+  if (!auth) return FIREBASE_NOT_CONFIGURED_ERROR;
   const provider = new GoogleAuthProvider();
   try {
     const result = await signInWithPopup(auth, provider);
@@ -66,5 +71,6 @@ export async function loginWithGoogle() {
 }
 
 export async function signOut() {
+  if (!auth) return FIREBASE_NOT_CONFIGURED_ERROR;
   await firebaseSignOut(auth);
 }

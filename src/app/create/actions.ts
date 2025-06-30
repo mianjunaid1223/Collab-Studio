@@ -15,6 +15,10 @@ export const createProjectSchema = z.object({
 });
 
 export async function createProjectAction(values: z.infer<typeof createProjectSchema>) {
+  if (!auth) {
+    throw new Error('Firebase is not configured. Please add your credentials to a .env.local file.');
+  }
+
   const currentUser = auth.currentUser;
   if (!currentUser) {
     throw new Error('You must be logged in to create a project.');
