@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -35,7 +36,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
             style={{ backgroundColor: project.palette[0] || '#f0f0f0' }}
           >
              <Image 
-                src={`https://placehold.co/400x225/${project.palette[1].substring(1)}/${project.palette[0].substring(1)}.png`} 
+                src={`https://placehold.co/400x225/${project.palette.length > 1 ? project.palette[1].substring(1) : 'cccccc'}/${project.palette[0].substring(1)}.png`} 
                 data-ai-hint="pixel art"
                 width={400} 
                 height={225} 
@@ -70,7 +71,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
            </div>
            <div className="flex items-center">
              <Users className="h-4 w-4 mr-1.5" />
-             <span>{project.contributorCount} Contributors</span>
+             <span>{project.contributorCount}</span>
            </div>
         </CardFooter>
       </Card>

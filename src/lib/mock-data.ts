@@ -1,3 +1,7 @@
+
+// This file now serves as our in-memory "database" and data access layer.
+// In a real application, these functions would interact with a database like Firestore.
+
 export type Project = {
   id: string;
   title: string;
@@ -11,6 +15,7 @@ export type Project = {
   completionPercentage: number;
   contributorCount: number;
   theme: string;
+  createdAt: Date;
 };
 
 export type User = {
@@ -26,9 +31,10 @@ export const mockUsers: User[] = [
   { id: 'user2', name: 'CanvasCreator', avatar: 'https://placehold.co/100x100.png', streak: 5, totalContributions: 850 },
   { id: 'user3', name: 'ArtisanAlly', avatar: 'https://placehold.co/100x100.png', streak: 2, totalContributions: 312 },
   { id: 'user4', name: 'DotDrawer', avatar: 'https://placehold.co/100x100.png', streak: 0, totalContributions: 50 },
+  { id: 'user5', name: 'CurrentUser', avatar: 'https://placehold.co/100x100.png', streak: 1, totalContributions: 0 },
 ];
 
-export const mockProjects: Project[] = [
+export const projects: Project[] = [
   {
     id: 'proj1',
     title: 'Cosmic Ocean',
@@ -42,6 +48,7 @@ export const mockProjects: Project[] = [
     completionPercentage: 78,
     contributorCount: 42,
     theme: 'Sci-Fi',
+    createdAt: new Date('2023-10-26T10:00:00Z'),
   },
   {
     id: 'proj2',
@@ -56,6 +63,7 @@ export const mockProjects: Project[] = [
     completionPercentage: 45,
     contributorCount: 89,
     theme: 'Fantasy',
+    createdAt: new Date('2023-10-25T14:30:00Z'),
   },
   {
     id: 'proj3',
@@ -70,6 +78,7 @@ export const mockProjects: Project[] = [
     completionPercentage: 100,
     contributorCount: 120,
     theme: 'Urban',
+    createdAt: new Date('2023-09-15T18:00:00Z'),
   },
   {
     id: 'proj4',
@@ -84,6 +93,7 @@ export const mockProjects: Project[] = [
     completionPercentage: 100,
     contributorCount: 215,
     theme: 'Art',
+    createdAt: new Date('2023-08-01T12:00:00Z'),
   },
     {
     id: 'proj5',
@@ -98,6 +108,7 @@ export const mockProjects: Project[] = [
     completionPercentage: 22,
     contributorCount: 15,
     theme: 'Fantasy',
+    createdAt: new Date('2023-10-28T09:00:00Z'),
   },
     {
     id: 'proj6',
@@ -112,5 +123,17 @@ export const mockProjects: Project[] = [
     completionPercentage: 95,
     contributorCount: 77,
     theme: 'Retro',
+    createdAt: new Date('2023-07-20T20:00:00Z'),
   },
 ];
+
+
+// Data Access Functions
+export async function getProjects(): Promise<Project[]> {
+  // We'll sort by creation date to show newest first.
+  return Promise.resolve(projects.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
+}
+
+export async function getProjectById(id: string): Promise<Project | undefined> {
+  return Promise.resolve(projects.find(p => p.id === id));
+}

@@ -1,11 +1,14 @@
+
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProjectCard } from "@/components/project/project-card";
-import { mockProjects } from "@/lib/mock-data";
+import { getProjects } from "@/lib/mock-data";
 import { Search } from "lucide-react";
 
-export default function ExplorePage() {
-  const ongoingProjects = mockProjects.filter(p => p.status === 'Active');
+export default async function ExplorePage() {
+  const allProjects = await getProjects();
+  const ongoingProjects = allProjects.filter(p => p.status === 'Active');
+  const completedProjects = allProjects.filter(p => p.status === 'Completed');
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -45,19 +48,25 @@ export default function ExplorePage() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {ongoingProjects.map((project) => (
-          <ProjectCard key={project.id} project={project} />
-        ))}
+      <div>
+        <h2 className="text-3xl font-bold font-headline mb-6">Active Projects</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {ongoingProjects.map((project) => (
+            <ProjectCard key={project.id} project={project} />
+          ))}
+        </div>
+        {ongoingProjects.length === 0 && <p className="text-muted-foreground col-span-full text-center py-8">No active projects found. Why not create one?</p>}
       </div>
+
 
        <div className="mt-16">
         <h2 className="text-3xl font-bold font-headline mb-6 text-center">Completed Works</h2>
          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {mockProjects.filter(p => p.status === 'Completed').map((project) => (
+          {completedProjects.map((project) => (
             <ProjectCard key={project.id} project={project} />
           ))}
         </div>
+        {completedProjects.length === 0 && <p className="text-muted-foreground col-span-full text-center py-8">No masterpieces have been completed yet.</p>}
        </div>
     </div>
   );

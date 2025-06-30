@@ -1,20 +1,24 @@
-import { mockUsers, mockProjects } from '@/lib/mock-data';
+
+import { mockUsers, getProjects } from '@/lib/mock-data';
 import { notFound } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProjectCard } from '@/components/project/project-card';
 import { Flame, Droplets } from 'lucide-react';
 
-export default function ProfilePage({ params }: { params: { username: string } }) {
+export default async function ProfilePage({ params }: { params: { username: string } }) {
+  // User data is still mocked for now
   const user = mockUsers.find((u) => u.name === params.username);
 
   if (!user) {
     notFound();
   }
 
-  const contributedProjects = mockProjects.slice(0, 3);
-  const createdProjects = mockProjects.filter(p => p.createdBy === user.name);
+  const allProjects = await getProjects();
+  // Contributions are mocked, showing first 3 projects as an example
+  const contributedProjects = allProjects.slice(0, 3); 
+  const createdProjects = allProjects.filter(p => p.createdBy === user.name);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -40,9 +44,9 @@ export default function ProfilePage({ params }: { params: { username: string } }
         </CardContent>
       </Card>
       
-      <Tabs defaultValue="contributions" className="w-full">
+      <Tabs defaultValue="creations" className="w-full">
         <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
-          <TabsTrigger value="contributions">Contributions</TabsTrigger>
+          <TabsTrigger value="contributions">Contributions (mock)</TabsTrigger>
           <TabsTrigger value="creations">Creations</TabsTrigger>
         </TabsList>
         <TabsContent value="contributions" className="mt-6">

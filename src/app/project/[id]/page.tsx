@@ -1,43 +1,33 @@
-'use client';
 
-import { mockProjects, mockUsers } from '@/lib/mock-data';
+import { getProjectById } from '@/lib/mock-data';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Download, Users } from 'lucide-react';
+import { Download, Users, Brush } from 'lucide-react';
 import { ProjectStatus } from '@/components/project/project-status';
-import PixelCanvas from '@/components/canvas/pixel-canvas';
-import { ColorPicker } from '@/components/canvas/color-picker';
-import { useState } from 'react';
+import { mockUsers } from '@/lib/mock-data';
 
-export default function ProjectPage({ params }: { params: { id: string } }) {
-  const project = mockProjects.find((p) => p.id === params.id);
+export default async function ProjectPage({ params }: { params: { id: string } }) {
+  const project = await getProjectById(params.id);
 
   if (!project) {
     notFound();
   }
-
-  const [selectedColor, setSelectedColor] = useState(project.palette[0]);
 
   const contributors = mockUsers.slice(0, Math.min(mockUsers.length, project.contributorCount)).slice(0, 10);
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 order-2 lg:order-1">
-          <Card className="shadow-lg h-[calc(100vh-10rem)] overflow-hidden">
-            <PixelCanvas width={project.width} height={project.height} palette={project.palette} selectedColor={selectedColor} />
-          </Card>
-        </div>
-
-        <div className="lg:col-span-1 order-1 lg:order-2 space-y-6">
-          <Card>
+        
+        <div className="lg:col-span-2">
+          <Card className="shadow-lg">
             <CardHeader>
               <Badge variant="outline" className="w-fit mb-2">{project.theme}</Badge>
-              <h1 className="text-3xl font-bold font-headline">{project.title}</h1>
+              <h1 className="text-4xl font-bold font-headline">{project.title}</h1>
               <div className="flex items-center text-sm text-muted-foreground pt-2">
                 <Avatar className="h-6 w-6 mr-2">
                   <AvatarImage src={project.creatorAvatar} alt={project.createdBy} />
@@ -47,10 +37,27 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">{project.description}</p>
+              <p className="text-muted-foreground text-lg">{project.description}</p>
             </CardContent>
           </Card>
+          
+          <Card className="mt-8">
+             <CardHeader>
+                <CardTitle>Enter the Canvas</CardTitle>
+             </CardHeader>
+             <CardContent className="text-center">
+                <p className="text-muted-foreground mb-4">Join other contributors and place your pixels on the canvas.</p>
+                 <Button asChild size="lg">
+                    <Link href={`/project/${project.id}/canvas`}>
+                        <Brush className="mr-2 h-5 w-5"/>
+                        Start Painting
+                    </Link>
+                 </Button>
+             </CardContent>
+          </Card>
+        </div>
 
+        <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Canvas Status</CardTitle>
@@ -60,13 +67,11 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
               {project.status === 'Completed' && (
                 <Button className="w-full mt-4">
                   <Download className="mr-2 h-4 w-4" />
-                  Download as SVG
+                  Download as PNG
                 </Button>
               )}
             </CardContent>
           </Card>
-
-          <ColorPicker palette={project.palette} selectedColor={selectedColor} onColorSelect={setSelectedColor} />
           
           <Card>
             <CardHeader>
@@ -75,7 +80,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
                 Contributors ({project.contributorCount})
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 max-h-96 overflow-y-auto">
               {contributors.map(user => (
                 <Link href={`/profile/${user.name}`} key={user.id} className="flex items-center space-x-3 hover:bg-muted p-2 rounded-md">
                    <Avatar>
@@ -84,7 +89,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
                   </Avatar>
                   <div className="flex flex-col">
                     <span className="font-semibold text-sm">{user.name}</span>
-                    <span className="text-xs text-muted-foreground">Contributed {user.totalContributions} pixels</span>
+                    <span className="text-xs text-muted-foreground">Contributed {user.totalContributions.toLocaleString()} pixels</span>
                   </div>
                 </Link>
               ))}

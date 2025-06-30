@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useRouter } from 'next/navigation';
+import type { z } from 'zod';
+import { useTransition } from 'react';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,9 +18,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from '@/lib/utils';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { createProjectSchema, createProjectAction } from './actions';
 
 const predefinedPalettes = [
   { name: 'Cosmic', colors: ['#0A1931', '#185ADB', '#FFC947', '#EFEFEF', '#42A5F5', '#64B5F6'] },
@@ -28,19 +30,13 @@ const predefinedPalettes = [
   { name: 'Retro', colors: ['#000000', '#FF00FF', '#00FFFF', '#FFFF00', '#FF4500', '#FFFFFF'] },
 ];
 
-const createProjectSchema = z.object({
-  title: z.string().min(3, { message: "Title must be at least 3 characters long." }),
-  description: z.string().min(10, { message: "Description must be at least 10 characters long." }),
-  width: z.coerce.number().int().min(16, { message: "Width must be at least 16px." }).max(256, { message: "Width must be at most 256px." }),
-  height: z.coerce.number().int().min(16, { message: "Height must be at least 16px." }).max(256, { message: "Height must be at most 256px." }),
-  palette: z.array(z.string()).min(1, { message: "A palette must be selected." }),
-});
+type CreateProjectValues = z.infer<typeof createProjectSchema>;
 
 export default function CreateProjectPage() {
-  const router = useRouter();
   const { toast } = useToast();
+  const [isPending, startTransition] = useTransition();
 
-  const form = useForm<z.infer<typeof createProjectSchema>>({
+  const form = useForm<CreateProjectValues>({
     resolver: zodResolver(createProjectSchema),
     defaultValues: {
       title: "",
@@ -53,13 +49,22 @@ export default function CreateProjectPage() {
 
   const selectedPalette = form.watch('palette');
 
-  function onSubmit(values: z.infer<typeof createProjectSchema>) {
-    console.log("Creating project with values:", values);
-    toast({
-      title: "Project Created!",
-      description: "Your new canvas is ready for collaboration.",
+  async function onSubmit(values: CreateProjectValues) {
+    startTransition(async () => {
+      try {
+        await createProjectAction(values);
+        toast({
+          title: "Project Created!",
+          description: "Your new canvas is ready for collaboration.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to create project. Please try again.",
+          variant: "destructive",
+        });
+      }
     });
-    router.push('/explore');
   }
 
   return (
@@ -81,7 +86,7 @@ export default function CreateProjectPage() {
                   <FormItem>
                     <FormLabel>Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., 'Enchanted Forest at Dusk'" {...field} />
+                      <Input placeholder="e.g., 'Enchanted Forest at Dusk'" {...field} disabled={isPending} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -98,6 +103,7 @@ export default function CreateProjectPage() {
                         placeholder="Describe the scene, mood, and key elements you envision for your canvas."
                         rows={4}
                         {...field}
+                        disabled={isPending}
                       />
                     </FormControl>
                     <FormMessage />
@@ -113,7 +119,7 @@ export default function CreateProjectPage() {
                     <FormItem>
                       <FormLabel>Width (pixels)</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input type="number" {...field} disabled={isPending} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -126,7 +132,7 @@ export default function CreateProjectPage() {
                     <FormItem>
                       <FormLabel>Height (pixels)</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input type="number" {...field} disabled={isPending} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -147,8 +153,9 @@ export default function CreateProjectPage() {
                               <button
                                 type="button"
                                 onClick={() => form.setValue('palette', palette.colors, { shouldValidate: true })}
+                                disabled={isPending}
                                 className={cn(
-                                    "w-full text-left p-2 rounded-md border-2 flex items-center gap-2 transition-colors",
+                                    "w-full text-left p-2 rounded-md border-2 flex items-center gap-2 transition-colors disabled:opacity-50",
                                     JSON.stringify(selectedPalette) === JSON.stringify(palette.colors) ? "border-primary ring-2 ring-primary/20" : "border-border"
                                 )}
                               >
@@ -168,7 +175,10 @@ export default function CreateProjectPage() {
                />
             </CardContent>
             <CardFooter>
-              <Button size="lg" className="w-full" type="submit">Create Project</Button>
+              <Button size="lg" className="w-full" type="submit" disabled={isPending}>
+                {isPending && <Loader2 className="animate-spin" />}
+                {isPending ? 'Creating...' : 'Create Project'}
+              </Button>
             </CardFooter>
           </Card>
         </form>

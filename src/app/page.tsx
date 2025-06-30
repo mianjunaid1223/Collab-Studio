@@ -1,13 +1,15 @@
+
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Palette, Users, MousePointerClick } from "lucide-react";
 import { ProjectCard } from "@/components/project/project-card";
-import { mockProjects } from "@/lib/mock-data";
+import { getProjects } from "@/lib/mock-data";
 
-export default function Home() {
-  const completedProjects = mockProjects.filter(p => p.status === 'Completed').slice(0, 3);
+export default async function Home() {
+  const allProjects = await getProjects();
+  const completedProjects = allProjects.filter(p => p.status === 'Completed').slice(0, 3);
 
   return (
     <div className="flex flex-col min-h-screen">
