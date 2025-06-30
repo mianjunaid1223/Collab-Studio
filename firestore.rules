@@ -1,9 +1,32 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+    
+    // Users can be read by anyone.
+    // A user can only create or update their own profile.
+    match /users/{userId} {
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Projects can be read by anyone.
+    // They can be created or updated by any authenticated user.
+    match /projects/{projectId} {
+      allow read; // read is get and list
+      allow create: if request.auth != null;
+      // This is permissive, allowing any logged-in user to update a project.
+      // This is necessary if, for example, placing a pixel needs to update project stats.
+      // A production app would likely use a Cloud Function for more granular control.
+      allow update: if request.auth != null; 
+    }
+    
+    // Pixels can be read by anyone.
+    // They can be written by any authenticated user.
+    match /projects/{projectId}/pixels/{pixelId} {
+        allow read; // read is get and list
+        allow write: if request.auth != null;
     }
   }
 }
