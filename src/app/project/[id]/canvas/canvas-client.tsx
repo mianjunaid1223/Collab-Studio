@@ -1,35 +1,68 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import PixelCanvas, { type PixelCanvasHandle } from '@/components/canvas/pixel-canvas';
 import { ColorPicker } from '@/components/canvas/color-picker';
-import type { Project } from '@/lib/mock-data';
+import type { Project } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, RefreshCw, Loader2 } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Loader2, Info } from 'lucide-react';
+import { useAuth } from '@/context/auth-context';
+import { streamProjectPixels, placePixel } from '@/lib/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 export default function CanvasClient({ project }: { project: Project }) {
-  const [selectedColor, setSelectedColor] = useState(project.palette[0]);
+  const [selectedColor, setSelectedColor] = useState('#000000');
+  const [pixels, setPixels] = useState<Map<string, string>>(new Map());
   const canvasHandleRef = useRef<PixelCanvasHandle>(null);
   const [isClient, setIsClient] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    const unsubscribe = streamProjectPixels(project.id, (newPixels) => {
+        setPixels(newPixels);
+    });
+
+    return () => unsubscribe();
+  }, [project.id]);
 
   const handleResetView = () => {
     canvasHandleRef.current?.resetCanvas();
   };
 
+  const handlePlacePixel = useCallback(async (x: number, y: number, color: string) => {
+    if (!user) {
+        toast({
+            title: "Not Logged In",
+            description: "You must be logged in to place pixels.",
+            variant: "destructive",
+        });
+        return;
+    }
+    try {
+        await placePixel(project.id, user.uid, x, y, color);
+    } catch (error) {
+        console.error("Failed to place pixel:", error);
+        toast({
+            title: "Error",
+            description: "Could not place pixel. Please try again.",
+            variant: "destructive",
+        });
+    }
+  }, [project.id, user, toast]);
+
   return (
     <div className="flex flex-col lg:flex-row h-screen w-screen bg-background text-foreground">
-      <div className="flex-grow bg-muted/20 relative flex items-center justify-center">
+      <div className="flex-grow bg-muted/20 relative flex items-center justify-center overflow-hidden">
         {isClient ? (
           <PixelCanvas 
             ref={canvasHandleRef}
             width={project.width} 
-            height={project.height} 
-            palette={project.palette}
-            selectedColor={selectedColor} 
+            height={project.height}
+            pixels={pixels}
+            selectedColor={selectedColor}
+            onPixelPlace={handlePlacePixel}
           />
         ) : (
           <div className="flex flex-col items-center gap-4 text-muted-foreground">
@@ -40,12 +73,12 @@ export default function CanvasClient({ project }: { project: Project }) {
          <div className="absolute top-4 left-4 right-4 z-10 flex justify-between pointer-events-none">
             <Button asChild variant="secondary" className="pointer-events-auto">
                 <Link href={`/project/${project.id}`}>
-                    <ArrowLeft />
+                    <ArrowLeft className="h-4 w-4 mr-2" />
                     Back to Details
                 </Link>
             </Button>
             <Button variant="secondary" onClick={handleResetView} className="pointer-events-auto">
-                <RefreshCw />
+                <RefreshCw className="h-4 w-4 mr-2" />
                 Reset View
             </Button>
          </div>
@@ -54,15 +87,14 @@ export default function CanvasClient({ project }: { project: Project }) {
         <div className="space-y-6">
           <div>
             <h1 className="text-2xl font-bold font-headline">{project.title}</h1>
-            <p className="text-sm text-muted-foreground">by {project.createdBy}</p>
+            <p className="text-sm text-muted-foreground">by {project.creatorName}</p>
           </div>
           <ColorPicker 
-            palette={project.palette} 
             selectedColor={selectedColor} 
             onColorSelect={setSelectedColor} 
           />
            <div className="text-sm text-muted-foreground p-3 rounded-lg bg-muted/50 border">
-            <h3 className="font-semibold text-foreground mb-2">How to Use:</h3>
+            <h3 className="font-semibold text-foreground mb-2 flex items-center"><Info className="h-4 w-4 mr-2"/>Controls</h3>
             <ul className="list-none space-y-2">
                 <li><span className="font-semibold">Pan:</span> Middle-click or <kbd className="px-1.5 py-0.5 border rounded-sm bg-background">Ctrl</kbd> + drag.</li>
                 <li><span className="font-semibold">Zoom:</span> <kbd className="px-1.5 py-0.5 border rounded-sm bg-background">Ctrl</kbd> + scroll, or pinch gesture.</li>

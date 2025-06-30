@@ -1,5 +1,4 @@
-
-import { getProjectById } from '@/lib/mock-data';
+import { getProjectById, getContributors } from '@/lib/firestore';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +7,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Download, Users, Brush } from 'lucide-react';
 import { ProjectStatus } from '@/components/project/project-status';
-import { mockUsers } from '@/lib/mock-data';
 
 export default async function ProjectPage({ params }: { params: { id: string } }) {
   const project = await getProjectById(params.id);
@@ -17,7 +15,8 @@ export default async function ProjectPage({ params }: { params: { id: string } }
     notFound();
   }
 
-  const contributors = mockUsers.slice(0, Math.min(mockUsers.length, project.contributorCount)).slice(0, 10);
+  // Note: Contributor fetching is simplified. A production app might use a more efficient method.
+  const contributors = await getContributors(project.id);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -30,10 +29,10 @@ export default async function ProjectPage({ params }: { params: { id: string } }
               <h1 className="text-4xl font-bold font-headline">{project.title}</h1>
               <div className="flex items-center text-sm text-muted-foreground pt-2">
                 <Avatar className="h-6 w-6 mr-2">
-                  <AvatarImage src={project.creatorAvatar} alt={project.createdBy} />
-                  <AvatarFallback>{project.createdBy.charAt(0)}</AvatarFallback>
+                  <AvatarImage src={project.creatorAvatar} alt={project.creatorName} />
+                  <AvatarFallback>{project.creatorName.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <span>Created by <Link href={`/profile/${project.createdBy}`} className="font-medium text-primary hover:underline">{project.createdBy}</Link></span>
+                <span>Created by <Link href={`/profile/${project.createdBy}`} className="font-medium text-primary hover:underline">{project.creatorName}</Link></span>
               </div>
             </CardHeader>
             <CardContent>
@@ -81,8 +80,8 @@ export default async function ProjectPage({ params }: { params: { id: string } }
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 max-h-96 overflow-y-auto">
-              {contributors.map(user => (
-                <Link href={`/profile/${user.name}`} key={user.id} className="flex items-center space-x-3 hover:bg-muted p-2 rounded-md">
+              {contributors.length > 0 ? contributors.map(user => (
+                <Link href={`/profile/${user.id}`} key={user.id} className="flex items-center space-x-3 hover:bg-muted p-2 rounded-md">
                    <Avatar>
                     <AvatarImage src={user.avatar} alt={user.name} />
                     <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
@@ -92,7 +91,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
                     <span className="text-xs text-muted-foreground">Contributed {user.totalContributions.toLocaleString()} pixels</span>
                   </div>
                 </Link>
-              ))}
+              )) : <p className="text-sm text-muted-foreground">Be the first to contribute!</p>}
             </CardContent>
           </Card>
         </div>

@@ -5,8 +5,9 @@ import React, { useRef, useEffect, useState, useCallback, useImperativeHandle } 
 interface PixelCanvasProps {
   width: number;
   height: number;
-  palette: string[];
+  pixels: Map<string, string>;
   selectedColor: string;
+  onPixelPlace: (x: number, y: number, color: string) => void;
 }
 
 export interface PixelCanvasHandle {
@@ -17,13 +18,12 @@ const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 40;
 const GRID_COLOR = 'rgba(0,0,0,0.1)';
 
-const PixelCanvas: React.ForwardRefRenderFunction<PixelCanvasHandle, PixelCanvasProps> = ({ width, height, selectedColor }, ref) => {
+const PixelCanvas: React.ForwardRefRenderFunction<PixelCanvasHandle, PixelCanvasProps> = ({ width, height, pixels, selectedColor, onPixelPlace }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [lastPanPosition, setLastPanPosition] = useState({ x: 0, y: 0 });
-  const [pixels, setPixels] = useState<Map<string, string>>(new Map());
   const isMounted = useRef(false);
   const touchCache = useRef<{ distance: number | null }>({ distance: null });
   const touchStartRef = useRef<{x: number, y: number, time: number} | null>(null);
@@ -172,9 +172,6 @@ const PixelCanvas: React.ForwardRefRenderFunction<PixelCanvasHandle, PixelCanvas
   };
 
   const handleZoom = (e: React.WheelEvent) => {
-    // This makes zooming more intentional.
-    // For trackpads, a pinch gesture often sets e.ctrlKey = true.
-    // For mice, it's Ctrl + Scroll.
     if (!e.ctrlKey) return;
     
     e.preventDefault();
@@ -198,7 +195,7 @@ const PixelCanvas: React.ForwardRefRenderFunction<PixelCanvasHandle, PixelCanvas
     setPan(clampPan({ x: newPanX, y: newPanY }, newZoom));
   };
 
-  const placePixel = (clientX: number, clientY: number) => {
+  const placePixelAction = (clientX: number, clientY: number) => {
     const coords = getCanvasCoords(clientX, clientY);
     if (!coords) return;
     
@@ -206,16 +203,11 @@ const PixelCanvas: React.ForwardRefRenderFunction<PixelCanvasHandle, PixelCanvas
     const pixelY = Math.floor(coords.y);
 
     if (pixelX >= 0 && pixelX < width && pixelY >= 0 && pixelY < height) {
-      setPixels(prevPixels => {
-        const newPixels = new Map(prevPixels);
-        newPixels.set(`${pixelX},${pixelY}`, selectedColor);
-        return newPixels;
-      });
+      onPixelPlace(pixelX, pixelY, selectedColor);
     }
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Middle mouse button for panning, or Ctrl + Left Click
     if (e.button === 1 || (e.button === 0 && e.ctrlKey)) {
       e.preventDefault();
       handlePanStart(e.clientX, e.clientY);
@@ -230,7 +222,7 @@ const PixelCanvas: React.ForwardRefRenderFunction<PixelCanvasHandle, PixelCanvas
     if (isPanning) {
       handlePanEnd();
     } else if (e.button === 0 && !e.ctrlKey) {
-        placePixel(e.clientX, e.clientY);
+        placePixelAction(e.clientX, e.clientY);
     }
   };
 
@@ -295,7 +287,7 @@ const PixelCanvas: React.ForwardRefRenderFunction<PixelCanvasHandle, PixelCanvas
           
           if (dt < 250 && Math.sqrt(dx*dx + dy*dy) < 10) {
               if (isPanning) setIsPanning(false);
-              placePixel(touchStartRef.current.x, touchStartRef.current.y);
+              placePixelAction(touchStartRef.current.x, touchStartRef.current.y);
               touchStartRef.current = null;
               return;
           }

@@ -1,37 +1,39 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import { Check } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface ColorPickerProps {
-  palette: string[];
   selectedColor: string;
   onColorSelect: (color: string) => void;
 }
 
-export function ColorPicker({ palette, selectedColor, onColorSelect }: ColorPickerProps) {
+export function ColorPicker({ selectedColor, onColorSelect }: ColorPickerProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Color Palette</CardTitle>
+        <CardTitle>Color Picker</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="flex flex-wrap gap-2">
-          {palette.map((color) => (
-            <button
-              key={color}
-              onClick={() => onColorSelect(color)}
-              className={cn(
-                'h-10 w-10 rounded-md border-2 transition-transform transform hover:scale-110 flex items-center justify-center',
-                selectedColor === color ? 'border-primary ring-2 ring-ring' : 'border-muted'
-              )}
-              style={{ backgroundColor: color }}
-              aria-label={`Select color ${color}`}
-            >
-              {selectedColor === color && <Check className="h-6 w-6 text-white mix-blend-difference" />}
-            </button>
-          ))}
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-4">
+           <Label htmlFor="color-picker-input" className="sr-only">Color Picker</Label>
+           <Input 
+             id="color-picker-input"
+             type="color" 
+             value={selectedColor}
+             onChange={(e) => onColorSelect(e.target.value)}
+             className="p-0 h-12 w-12 cursor-pointer border-2 border-muted"
+            />
+           <div className="flex flex-col">
+              <Label htmlFor="color-hex-input" className="text-xs text-muted-foreground">HEX Code</Label>
+              <Input
+                id="color-hex-input"
+                value={selectedColor}
+                onChange={(e) => onColorSelect(e.target.value)}
+                className="font-mono"
+              />
+           </div>
         </div>
       </CardContent>
     </Card>

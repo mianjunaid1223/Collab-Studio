@@ -1,15 +1,14 @@
-
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Palette, Users, MousePointerClick } from "lucide-react";
 import { ProjectCard } from "@/components/project/project-card";
-import { getProjects } from "@/lib/mock-data";
+import { getCompletedProjects } from "@/lib/firestore";
+import type { Project } from "@/lib/types";
 
 export default async function Home() {
-  const allProjects = await getProjects();
-  const completedProjects = allProjects.filter(p => p.status === 'Completed').slice(0, 3);
+  const completedProjects: Project[] = await getCompletedProjects(3);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -82,7 +81,7 @@ export default async function Home() {
                 <CardTitle>Contribute Pixels</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">Contributors interpret the description, earn pixels by watching ads, and place them on the shared canvas.</p>
+                <p className="text-sm text-muted-foreground">Contributors interpret the description and place pixels on the shared canvas, bringing it to life in real-time.</p>
               </CardContent>
             </Card>
             <Card className="bg-card/80 border-2 border-transparent hover:border-primary/50 transition-all duration-300 transform hover:-translate-y-1">

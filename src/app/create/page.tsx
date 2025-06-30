@@ -1,10 +1,10 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { z } from 'zod';
 import { useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,24 +17,22 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from '@/lib/utils';
-import { Check, Loader2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { createProjectSchema, createProjectAction } from './actions';
-
-const predefinedPalettes = [
-  { name: 'Cosmic', colors: ['#0A1931', '#185ADB', '#FFC947', '#EFEFEF', '#42A5F5', '#64B5F6'] },
-  { name: 'Forest', colors: ['#2F4858', '#33658A', '#86BBD8', '#F6AE2D', '#F26419', '#E3F2FD'] },
-  { name: 'Sunset', colors: ['#2C3E50', '#E74C3C', '#ECF0F1', '#F39C12', '#8E44AD', '#BDC3C7'] },
-  { name: 'Retro', colors: ['#000000', '#FF00FF', '#00FFFF', '#FFFF00', '#FF4500', '#FFFFFF'] },
-];
+import { useAuth } from '@/context/auth-context';
 
 type CreateProjectValues = z.infer<typeof createProjectSchema>;
 
+const themes = ['Fantasy', 'Sci-Fi', 'Urban', 'Nature', 'Abstract', 'Retro', 'Art'];
+
 export default function CreateProjectPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const { user, loading } = useAuth();
 
   const form = useForm<CreateProjectValues>({
     resolver: zodResolver(createProjectSchema),
@@ -43,11 +41,14 @@ export default function CreateProjectPage() {
       description: "",
       width: 64,
       height: 64,
-      palette: predefinedPalettes[0].colors,
+      theme: 'Fantasy',
     },
   });
 
-  const selectedPalette = form.watch('palette');
+  if (!loading && !user) {
+    router.push('/login');
+    return null;
+  }
 
   async function onSubmit(values: CreateProjectValues) {
     startTransition(async () => {
@@ -57,10 +58,10 @@ export default function CreateProjectPage() {
           title: "Project Created!",
           description: "Your new canvas is ready for collaboration.",
         });
-      } catch (error) {
+      } catch (error: any) {
         toast({
           title: "Error",
-          description: "Failed to create project. Please try again.",
+          description: error.message || "Failed to create project. Please try again.",
           variant: "destructive",
         });
       }
@@ -75,7 +76,7 @@ export default function CreateProjectPage() {
             <CardHeader>
               <CardTitle className="text-3xl font-headline">Create a New Canvas</CardTitle>
               <CardDescription>
-                Describe your vision with words and a palette. Let the community bring it to life.
+                Describe your vision. The community will bring it to life, one pixel at a time.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -141,38 +142,27 @@ export default function CreateProjectPage() {
               </div>
 
                <FormField
-                control={form.control}
-                name="palette"
-                render={({ field }) => (
-                  <FormItem className="space-y-2">
-                    <FormLabel>Choose a Palette</FormLabel>
-                     <FormControl>
-                        <div className="space-y-2">
-                          {predefinedPalettes.map(palette => (
-                            <div key={palette.name}>
-                              <button
-                                type="button"
-                                onClick={() => form.setValue('palette', palette.colors, { shouldValidate: true })}
-                                disabled={isPending}
-                                className={cn(
-                                    "w-full text-left p-2 rounded-md border-2 flex items-center gap-2 transition-colors disabled:opacity-50",
-                                    JSON.stringify(selectedPalette) === JSON.stringify(palette.colors) ? "border-primary ring-2 ring-primary/20" : "border-border"
-                                )}
-                              >
-                                {JSON.stringify(selectedPalette) === JSON.stringify(palette.colors) ? <Check className="h-5 w-5 text-primary"/> : <div className="h-5 w-5"/>}
-                                <span className="font-medium">{palette.name}</span>
-                                <div className="flex gap-1 ml-auto">
-                                  {palette.colors.map(color => <div key={color} className="h-5 w-5 rounded" style={{backgroundColor: color}}/>)}
-                                </div>
-                              </button>
-                            </div>
+                  control={form.control}
+                  name="theme"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Theme</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger disabled={isPending}>
+                            <SelectValue placeholder="Select a theme for your project" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {themes.map(theme => (
+                            <SelectItem key={theme} value={theme}>{theme}</SelectItem>
                           ))}
-                        </div>
-                     </FormControl>
-                     <FormMessage />
-                  </FormItem>
-                )}
-               />
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
             </CardContent>
             <CardFooter>
               <Button size="lg" className="w-full" type="submit" disabled={isPending}>

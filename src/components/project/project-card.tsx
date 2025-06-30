@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -7,7 +6,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import type { Project } from '@/lib/mock-data';
+import type { Project } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Users } from 'lucide-react';
 
@@ -33,10 +32,9 @@ export function ProjectCard({ project }: ProjectCardProps) {
         <CardHeader>
           <div
             className="aspect-video w-full rounded-md bg-muted overflow-hidden flex items-center justify-center"
-            style={{ backgroundColor: project.palette[0] || '#f0f0f0' }}
           >
              <Image 
-                src={`https://placehold.co/400x225/${project.palette.length > 1 ? project.palette[1].substring(1) : 'cccccc'}/${project.palette[0].substring(1)}.png`} 
+                src={`https://placehold.co/400x225/cccccc/333333.png?text=${project.width}x${project.height}`}
                 data-ai-hint="pixel art"
                 width={400} 
                 height={225} 
@@ -52,10 +50,10 @@ export function ProjectCard({ project }: ProjectCardProps) {
           <CardTitle className="text-xl font-headline mb-2">{project.title}</CardTitle>
           <div className="flex items-center text-sm text-muted-foreground mb-4">
             <Avatar className="h-6 w-6 mr-2">
-              <AvatarImage src={project.creatorAvatar} alt={project.createdBy} />
-              <AvatarFallback>{project.createdBy.charAt(0)}</AvatarFallback>
+              <AvatarImage src={project.creatorAvatar} alt={project.creatorName} />
+              <AvatarFallback>{project.creatorName.charAt(0)}</AvatarFallback>
             </Avatar>
-            <span>by {project.createdBy}</span>
+            <span>by {project.creatorName}</span>
           </div>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between items-center">

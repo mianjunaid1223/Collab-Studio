@@ -1,5 +1,4 @@
-
-import { mockUsers, getProjects } from '@/lib/mock-data';
+import { getUserProfile, getProjects } from '@/lib/firestore';
 import { notFound } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,18 +6,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProjectCard } from '@/components/project/project-card';
 import { Flame, Droplets } from 'lucide-react';
 
-export default async function ProfilePage({ params }: { params: { username: string } }) {
-  // User data is still mocked for now
-  const user = mockUsers.find((u) => u.name === params.username);
+export default async function ProfilePage({ params }: { params: { userId: string } }) {
+  const user = await getUserProfile(params.userId);
 
   if (!user) {
     notFound();
   }
 
   const allProjects = await getProjects();
-  // Contributions are mocked, showing first 3 projects as an example
-  const contributedProjects = allProjects.slice(0, 3); 
-  const createdProjects = allProjects.filter(p => p.createdBy === user.name);
+  // TODO: A real implementation would query for projects created by or contributed to by the user.
+  const createdProjects = allProjects.filter(p => p.createdBy === user.id);
+  const contributedProjects = []; // This requires more complex data modeling to track contributions per user.
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -46,15 +44,13 @@ export default async function ProfilePage({ params }: { params: { username: stri
       
       <Tabs defaultValue="creations" className="w-full">
         <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
-          <TabsTrigger value="contributions">Contributions (mock)</TabsTrigger>
+          <TabsTrigger value="contributions">Contributions</TabsTrigger>
           <TabsTrigger value="creations">Creations</TabsTrigger>
         </TabsList>
         <TabsContent value="contributions" className="mt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {contributedProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
+           <div className="text-center py-16 text-muted-foreground">
+              <p>Contribution tracking is coming soon!</p>
+            </div>
         </TabsContent>
         <TabsContent value="creations" className="mt-6">
           {createdProjects.length > 0 ? (

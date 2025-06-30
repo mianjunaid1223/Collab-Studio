@@ -1,14 +1,17 @@
-
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProjectCard } from "@/components/project/project-card";
-import { getProjects } from "@/lib/mock-data";
+import { getProjects } from "@/lib/firestore";
+import type { Project } from "@/lib/types";
 import { Search } from "lucide-react";
 
 export default async function ExplorePage() {
-  const allProjects = await getProjects();
+  const allProjects: Project[] = await getProjects();
   const ongoingProjects = allProjects.filter(p => p.status === 'Active');
   const completedProjects = allProjects.filter(p => p.status === 'Completed');
+
+  // Note: Filtering logic is not implemented yet as it requires more complex queries.
+  // This is a placeholder for future functionality.
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -57,7 +60,6 @@ export default async function ExplorePage() {
         </div>
         {ongoingProjects.length === 0 && <p className="text-muted-foreground col-span-full text-center py-8">No active projects found. Why not create one?</p>}
       </div>
-
 
        <div className="mt-16">
         <h2 className="text-3xl font-bold font-headline mb-6 text-center">Completed Works</h2>
