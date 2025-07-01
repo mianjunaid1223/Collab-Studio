@@ -27,7 +27,8 @@ export function CanvasSwitcher({ project, contributions, onContribute, user, ...
         contributions={contributions} 
         onContribute={onContribute} 
         user={user} 
-        activeWidth={toolProps.activeWidth} 
+        activeWidth={toolProps.activeWidth}
+        activeColor={toolProps.activeColor}
         />;
     case 'Mosaic':
       return <MosaicCanvas 

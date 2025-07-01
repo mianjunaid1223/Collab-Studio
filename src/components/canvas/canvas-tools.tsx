@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Waves, Circle, Square, Minus, Plus } from "lucide-react";
+import { FormControl } from "@/components/ui/form";
 
 interface CanvasToolsProps {
   canvasType: CanvasType;
@@ -83,14 +84,7 @@ export function CanvasTools({
 
             {canvasType === 'Embroidery' && (
                 <>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Thread Color</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-muted-foreground">Your thread color is uniquely assigned to you for this canvas.</p>
-                        </CardContent>
-                    </Card>
+                    <ColorPicker selectedColor={activeColor} onColorSelect={onColorChange} />
                      <Card>
                         <CardHeader>
                             <CardTitle>Thread Width</CardTitle>

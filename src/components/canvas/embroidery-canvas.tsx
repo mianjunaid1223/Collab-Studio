@@ -8,22 +8,10 @@ interface CanvasProps {
   onContribute: (data: any) => Promise<void>;
   user: User | null;
   activeWidth: number;
+  activeColor: string;
 }
 
-// Simple hash function to get a color for a user ID
-const getUserColor = (userId: string) => {
-    const colors = ['#d50000', '#c51162', '#aa00ff', '#6200ea', '#304ffe', '#0091ea', '#00b8d4', '#00bfa5', '#00c853', '#64dd17', '#aeea00', '#ffd600', '#ffab00', '#ff6d00', '#dd2c00', '#3e2723'];
-    let hash = 0;
-    if (!userId) return colors[0];
-    for (let i = 0; i < userId.length; i++) {
-        hash = userId.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const index = Math.abs(hash % colors.length);
-    return colors[index];
-};
-
-
-export function EmbroideryCanvas({ project, contributions, onContribute, user, activeWidth }: CanvasProps) {
+export function EmbroideryCanvas({ project, contributions, onContribute, user, activeWidth, activeColor }: CanvasProps) {
     const [isDrawing, setIsDrawing] = useState(false);
     const [startPoint, setStartPoint] = useState<{x: number, y: number} | null>(null);
     const [currentPoint, setCurrentPoint] = useState<{x: number, y: number} | null>(null);
@@ -62,7 +50,7 @@ export function EmbroideryCanvas({ project, contributions, onContribute, user, a
                 startY: startPoint.y,
                 endX: currentPoint.x,
                 endY: currentPoint.y,
-                color: getUserColor(user.id),
+                color: activeColor,
                 width: activeWidth,
             });
         }
@@ -105,7 +93,7 @@ export function EmbroideryCanvas({ project, contributions, onContribute, user, a
                         y1={startPoint.y}
                         x2={currentPoint.x}
                         y2={currentPoint.y}
-                        stroke={user ? getUserColor(user.id) : '#000000'}
+                        stroke={activeColor}
                         strokeWidth={activeWidth}
                         strokeLinecap="round"
                         strokeDasharray="5,5"
