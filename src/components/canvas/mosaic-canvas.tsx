@@ -31,7 +31,7 @@ export function MosaicCanvas({ project, contributions, onContribute, user, activ
 
     return (
         <div 
-            className="grid bg-card border-2 border-border/20 shadow-2xl aspect-square max-w-full max-h-full rounded-lg"
+            className="grid bg-card border-2 border-border/20 shadow-2xl aspect-square w-full rounded-lg"
             style={{
                 gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
                 gridTemplateRows: `repeat(${GRID_SIZE}, 1fr)`,

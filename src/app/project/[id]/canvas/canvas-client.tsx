@@ -114,7 +114,7 @@ export default function CanvasClient({ project: initialProject, initialContribut
   }, [project.id, project.canvasType, user, toast, socket]);
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex bg-background text-foreground">
+    <div className="h-screen w-screen flex bg-background text-foreground">
       
       {/* Left Panel */}
       <aside className={cn(
@@ -172,7 +172,7 @@ export default function CanvasClient({ project: initialProject, initialContribut
               </Button>
           </header>
 
-          <main className="flex-grow bg-muted/30 relative flex items-center justify-center overflow-auto p-4">
+          <main className="flex-grow bg-muted/30 relative flex justify-center overflow-auto p-4">
             {isClient ? (
               <CanvasSwitcher 
                 project={project}
