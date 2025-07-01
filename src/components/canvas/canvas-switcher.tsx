@@ -12,14 +12,16 @@ interface CanvasSwitcherProps {
   contributions: Contribution[];
   onContribute: (data: any) => Promise<void>;
   user: User | null;
+  activeColor: string;
+  activeChar: string;
 }
 
-export function CanvasSwitcher({ project, contributions, onContribute, user }: CanvasSwitcherProps) {
-  const props = { project, contributions, onContribute, user };
+export function CanvasSwitcher({ project, contributions, onContribute, user, activeColor, activeChar }: CanvasSwitcherProps) {
+  const props = { project, contributions, onContribute, user, activeColor, activeChar };
 
   switch (project.canvasType) {
     case 'Embroidery':
-      return <EmbroideryCanvas {...props} />;
+      return <EmbroideryCanvas project={props.project} contributions={props.contributions} onContribute={props.onContribute} user={props.user} />;
     case 'Mosaic':
       return <MosaicCanvas {...props} />;
     case 'Watercolor':
@@ -27,7 +29,7 @@ export function CanvasSwitcher({ project, contributions, onContribute, user }: C
     case 'Typographic':
       return <TypographicCanvas {...props} />;
     case 'AudioVisual':
-      return <AudioVisualCanvas {...props} />;
+      return <AudioVisualCanvas project={props.project} contributions={props.contributions} onContribute={props.onContribute} user={props.user} />;
     default:
       return (
         <div className="text-center p-8">

@@ -8,6 +8,7 @@ import { useAuth } from '@/context/auth-context';
 import { addContribution, getProjectContributions } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { CanvasSwitcher } from '@/components/canvas/canvas-switcher';
+import { CanvasTools } from '@/components/canvas/canvas-tools';
 
 export default function CanvasClient({ project, initialContributions }: { project: Project, initialContributions: Contribution[] }) {
   const [contributions, setContributions] = useState<Contribution[]>(initialContributions);
@@ -15,15 +16,20 @@ export default function CanvasClient({ project, initialContributions }: { projec
   const { user } = useAuth();
   const { toast } = useToast();
 
+  // Tool state
+  const [activeColor, setActiveColor] = useState('#64B5F6');
+  const [activeChar, setActiveChar] = useState('A');
+
   useEffect(() => {
     setIsClient(true);
-    // Note: To make this truly real-time, a WebSocket or server-sent events
-    // implementation would be needed to push updates from the server.
-    // For now, we'll fetch contributions periodically as a simple polling mechanism.
     const interval = setInterval(async () => {
-        const newContributions = await getProjectContributions(project.id);
-        setContributions(newContributions);
-    }, 5000); // Poll every 5 seconds
+        try {
+            const newContributions = await getProjectContributions(project.id);
+            setContributions(newContributions);
+        } catch (error) {
+            console.error("Failed to poll for contributions", error);
+        }
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [project.id]);
@@ -38,12 +44,11 @@ export default function CanvasClient({ project, initialContributions }: { projec
         return;
     }
     
-    // Optimistically update the UI
     const optimisticContribution: Contribution = {
-        id: new Date().toISOString(), // temporary client-side ID
+        id: new Date().toISOString(),
         _id: new Date().toISOString() as any,
         projectId: project._id,
-        userId: user._id,
+        userId: user.id,
         type: project.canvasType,
         data,
         createdAt: new Date(),
@@ -58,7 +63,6 @@ export default function CanvasClient({ project, initialContributions }: { projec
                 description: result.error,
                 variant: "destructive",
             });
-            // Revert optimistic update on error
             setContributions(c => c.filter(c => c.id !== optimisticContribution.id));
         }
     } catch (error) {
@@ -81,6 +85,8 @@ export default function CanvasClient({ project, initialContributions }: { projec
             contributions={contributions}
             onContribute={handleContribute}
             user={user}
+            activeColor={activeColor}
+            activeChar={activeChar}
           />
         ) : (
           <div className="flex flex-col items-center gap-4 text-muted-foreground">
@@ -107,6 +113,15 @@ export default function CanvasClient({ project, initialContributions }: { projec
             <h3 className="font-semibold text-foreground mb-2 flex items-center"><Info className="h-4 w-4 mr-2"/>Prompt</h3>
             <p>{project.description}</p>
            </div>
+           
+           <h3 className="font-semibold text-foreground">Tools</h3>
+           <CanvasTools
+             canvasType={project.canvasType}
+             activeColor={activeColor}
+             onColorChange={setActiveColor}
+             activeChar={activeChar}
+             onCharChange={setActiveChar}
+           />
         </div>
       </aside>
     </div>
