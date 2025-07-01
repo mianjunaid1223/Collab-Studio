@@ -2,9 +2,11 @@
 
 import { z } from 'zod';
 import { createUserProfile, getUserProfile } from '@/lib/firestore';
-import { db } from '@/lib/firebase';
+import { getFirestore } from 'firebase/firestore';
+import { app } from '@/lib/firebase';
 
 const FIREBASE_NOT_CONFIGURED_ERROR = "Firebase is not configured. Please add your credentials to a .env.local file.";
+const db = app ? getFirestore(app) : null;
 
 export async function handleGoogleUser(user: { uid: string; displayName: string | null; email: string | null; photoURL: string | null; }) {
   if (!db) return { error: FIREBASE_NOT_CONFIGURED_ERROR };

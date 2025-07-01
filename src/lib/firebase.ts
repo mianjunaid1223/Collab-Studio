@@ -1,5 +1,4 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
-import { getFirestore, type Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -10,20 +9,20 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-let app: FirebaseApp | null = null;
-let db: Firestore | null = null;
+// Check if all required config values are present
+const isConfigValid = firebaseConfig.apiKey && firebaseConfig.projectId;
 
-if (firebaseConfig.apiKey && firebaseConfig.projectId) {
-  try {
-    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    db = getFirestore(app);
-  } catch (error) {
-    console.error("Firebase initialization error:", error);
-  }
-} else {
-  console.warn(
-    "Firebase configuration is missing or incomplete. Please add your Firebase credentials to a .env.local file at the root of your project. Firebase features will be disabled."
-  );
+// Initialize app only if config is valid
+const app: FirebaseApp | null = isConfigValid
+  ? getApps().length === 0
+    ? initializeApp(firebaseConfig)
+    : getApp()
+  : null;
+
+if (!isConfigValid) {
+    console.warn(
+      "Firebase configuration is missing or incomplete. Please add your Firebase credentials to a .env.local file at the root of your project. Firebase features will be disabled."
+    );
 }
 
-export { app, db };
+export { app };

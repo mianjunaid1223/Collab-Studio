@@ -10,10 +10,13 @@ import {
   query,
   orderBy,
   limit,
-  onSnapshot
+  onSnapshot,
+  getFirestore
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { app } from './firebase';
 import type { Project, User, Pixel } from './types';
+
+const db = app ? getFirestore(app) : null;
 
 const FIREBASE_NOT_CONFIGURED_ERROR = "Firebase is not configured. Please check your environment variables.";
 
