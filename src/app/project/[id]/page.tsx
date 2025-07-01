@@ -34,7 +34,7 @@ export default async function ProjectPage({ params }: { params: { id:string } })
     getProjectContributions(project.id)
   ]);
   
-  const modeDetails = canvasModeDetails[project.canvasType] || { icon: <HelpCircle className="h-4 w-4" /> };
+  const modeDetails = canvasModeDetails[project.canvasType] ?? { icon: <HelpCircle className="h-4 w-4" /> };
 
   return (
     <div className="container mx-auto px-4 py-8">

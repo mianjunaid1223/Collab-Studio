@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Project, Contribution, User } from "@/lib/types";
@@ -125,13 +124,12 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
     };
 
     return (
-        <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-muted/20 gap-4">
+        <div className="w-full max-w-4xl flex flex-col items-center justify-center gap-4">
              <div 
-                className="grid bg-card border-2 border-border shadow-2xl relative overflow-hidden"
+                className="grid bg-card border-2 border-border shadow-2xl relative overflow-hidden w-full"
                 style={{
                     gridTemplateColumns: `repeat(${COLS}, 1fr)`,
                     gridTemplateRows: `repeat(${ROWS}, 1fr)`,
-                    width: 'min(90vw, 90vh)',
                     aspectRatio: `${COLS} / ${ROWS}`,
                 }}
             >
@@ -147,13 +145,13 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
 
                     const colorClass = isActive
                         ? waveformColors[noteData.waveform as keyof typeof waveformColors] || 'bg-primary'
-                        : 'bg-muted hover:bg-muted-foreground/20';
+                        : 'bg-background hover:bg-muted-foreground/20';
 
                     return (
                         <div
                             key={key}
                             className={cn(
-                                'w-full h-full border-r border-b border-muted/20 flex items-center justify-center transition-colors duration-150',
+                                'w-full h-full border-r border-b border-border/10 flex items-center justify-center transition-colors duration-150',
                                 user ? 'cursor-pointer' : 'cursor-not-allowed',
                                 {'bg-primary/10': isPlayingCol && !isPlayingNote}
                             )}

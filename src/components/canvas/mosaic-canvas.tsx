@@ -30,13 +30,12 @@ export function MosaicCanvas({ project, contributions, onContribute, user, activ
     };
 
     return (
-        <div className="flex items-center justify-center w-full h-full">
+        <div className="flex items-center justify-center w-full h-full p-4">
             <div 
-                className="grid bg-card border-2 border-border shadow-2xl aspect-square"
+                className="grid bg-card border-2 border-border/20 shadow-2xl aspect-square w-full h-full max-w-full max-h-full object-contain"
                 style={{
                     gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
                     gridTemplateRows: `repeat(${GRID_SIZE}, 1fr)`,
-                    width: 'min(90vw, 90vh)',
                 }}
             >
                 {Array.from({ length: GRID_SIZE * GRID_SIZE }).map((_, i) => {

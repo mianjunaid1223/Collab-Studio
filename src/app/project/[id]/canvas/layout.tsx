@@ -1,8 +1,11 @@
+export const metadata = {
+  title: "Canvas",
+};
 
 export default function CanvasLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <div className="overflow-hidden">{children}</div>;
+  return <div className="overflow-hidden h-screen w-screen">{children}</div>;
 }

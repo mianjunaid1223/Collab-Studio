@@ -60,17 +60,16 @@ export function EmbroideryCanvas({ project, contributions, onContribute, user, a
     };
     
     return (
-        <div className="w-full h-full flex items-center justify-center p-4 bg-muted/20">
+        <div className="w-full h-full flex items-center justify-center p-4">
             <svg
                 ref={svgRef}
                 viewBox="0 0 800 800"
-                className="aspect-square bg-card shadow-2xl cursor-crosshair"
+                className="aspect-square w-full h-full max-w-full max-h-full object-contain bg-card shadow-2xl cursor-crosshair"
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp} // End drawing if mouse leaves canvas
                 style={{
-                  width: 'min(90vw, 90vh)',
                   backgroundColor: '#fdfdf5',
                   backgroundImage: 'linear-gradient(rgba(180,160,150,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(180,160,150,0.05) 1px, transparent 1px)',
                   backgroundSize: '15px 15px',
