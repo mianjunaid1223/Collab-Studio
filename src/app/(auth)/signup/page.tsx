@@ -6,7 +6,6 @@ import { z } from "zod";
 import { useTransition } from 'react';
 import { useRouter } from "next/navigation";
 
-import { auth } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +21,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { createUserInDb, handleGoogleUser } from "../actions";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
 
 
 const signupSchema = z.object({
@@ -36,6 +36,7 @@ export default function SignupPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const { auth } = useAuth();
 
   const form = useForm<SignupValues>({
     resolver: zodResolver(signupSchema),
