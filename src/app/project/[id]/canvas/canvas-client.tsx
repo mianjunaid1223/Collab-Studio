@@ -12,6 +12,7 @@ import { CanvasTools } from '@/components/canvas/canvas-tools';
 import { ProjectStatus } from '@/components/project/project-status';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function CanvasClient({ project: initialProject, initialContributions }: { project: Project, initialContributions: Contribution[] }) {
   const [project, setProject] = useState<Project>(initialProject);
@@ -20,9 +21,10 @@ export default function CanvasClient({ project: initialProject, initialContribut
   const { user } = useAuth();
   const { toast } = useToast();
   const [socket, setSocket] = useState<Socket | null>(null);
+  const isMobile = useIsMobile();
 
-  const [leftPanelOpen, setLeftPanelOpen] = useState(true);
-  const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  const [leftPanelOpen, setLeftPanelOpen] = useState(!isMobile);
+  const [rightPanelOpen, setRightPanelOpen] = useState(!isMobile);
 
   // Tool state
   const [activeColor, setActiveColor] = useState('#64B5F6');
@@ -77,8 +79,15 @@ export default function CanvasClient({ project: initialProject, initialContribut
 
     initSocket();
 
-    return () => socket?.disconnect();
+    return () => {
+        socket?.disconnect();
+    }
   }, [project.id, project.canvasType, toast]);
+  
+  useEffect(() => {
+    setLeftPanelOpen(!isMobile);
+    setRightPanelOpen(!isMobile);
+  }, [isMobile]);
 
   const handleContribute = useCallback(async (data: any) => {
     if (!user) {
@@ -104,13 +113,14 @@ export default function CanvasClient({ project: initialProject, initialContribut
       
       {/* Left Panel */}
       <aside className={cn(
-          "h-full w-80 flex-shrink-0 border-r bg-card flex flex-col transition-all duration-300 ease-in-out",
-          "absolute lg:static z-20",
-          leftPanelOpen ? 'translate-x-0' : '-translate-x-full',
-          'lg:translate-x-0', // reset mobile transform
-          !leftPanelOpen && 'lg:w-0 lg:p-0 lg:border-0 lg:overflow-hidden'
+          "h-full w-80 flex-shrink-0 border-r bg-card flex flex-col transition-transform duration-300 ease-in-out",
+          "absolute lg:relative z-20",
+          leftPanelOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}>
-        <div className="p-4 space-y-6 h-full flex flex-col overflow-y-auto">
+        <div className={cn(
+          "p-4 space-y-6 h-full flex flex-col overflow-y-auto transition-opacity",
+           !leftPanelOpen && "lg:opacity-0"
+           )}>
             <Button asChild variant="outline" className="w-full">
                 <Link href={`/project/${project.id}`}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
@@ -133,6 +143,19 @@ export default function CanvasClient({ project: initialProject, initialContribut
             </div>
             <ProjectStatus project={project} />
         </div>
+        <style jsx>{`
+          aside {
+            width: ${leftPanelOpen ? '20rem' : '0'};
+            border-width: ${leftPanelOpen ? '0 1px 0 0' : '0'};
+            padding: ${leftPanelOpen ? '1rem' : '0'};
+          }
+          @media (max-width: 1023px) {
+            aside {
+                width: 20rem;
+                padding: 1rem;
+            }
+          }
+        `}</style>
       </aside>
       
       {/* Center Area */}
@@ -175,13 +198,14 @@ export default function CanvasClient({ project: initialProject, initialContribut
 
        {/* Right Panel */}
        <aside className={cn(
-        "h-full w-80 flex-shrink-0 border-l bg-card flex flex-col transition-all duration-300 ease-in-out",
-        "absolute lg:static right-0 top-0 z-20",
-        rightPanelOpen ? 'translate-x-0' : 'translate-x-full',
-        'lg:translate-x-0', // reset mobile transform
-        !rightPanelOpen && 'lg:w-0 lg:p-0 lg:border-0 lg:overflow-hidden'
+        "h-full w-80 flex-shrink-0 border-l bg-card flex flex-col transition-transform duration-300 ease-in-out",
+        "absolute lg:relative right-0 top-0 z-20",
+        rightPanelOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
         )}>
-          <div className="p-4 space-y-6 overflow-y-auto">
+           <div className={cn(
+            "p-4 space-y-6 h-full flex flex-col overflow-y-auto transition-opacity",
+            !rightPanelOpen && "lg:opacity-0"
+           )}>
               <h2 className="text-2xl font-bold font-headline">Tools</h2>
                <CanvasTools
                  canvasType={project.canvasType}
@@ -201,6 +225,19 @@ export default function CanvasClient({ project: initialProject, initialContribut
                  onBPMChange={setActiveBPM}
                />
             </div>
+            <style jsx>{`
+              aside {
+                width: ${rightPanelOpen ? '20rem' : '0'};
+                border-width: ${rightPanelOpen ? '0 0 0 1px' : '0'};
+                padding: ${rightPanelOpen ? '1rem' : '0'};
+              }
+              @media (max-width: 1023px) {
+                aside {
+                    width: 20rem;
+                    padding: 1rem;
+                }
+              }
+            `}</style>
       </aside>
     </div>
   );
