@@ -8,12 +8,7 @@ import dbConnect, { User, Project } from '@/lib/mongodb';
 import type { User as UserType } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 
-const JWT_SECRET = process.env.JWT_SECRET;
 const COOKIE_NAME = 'session';
-
-if (!JWT_SECRET) {
-  throw new Error('Please define the JWT_SECRET environment variable');
-}
 
 // --- Auth Schemas ---
 
@@ -32,7 +27,10 @@ const loginSchema = z.object({
 
 export async function signup(values: z.infer<typeof signupSchema>) {
   try {
-    await dbConnect();
+    const conn = await dbConnect();
+    if (!conn) {
+      return { error: 'Database is not configured. Please contact the administrator.' };
+    }
 
     const existingUser = await User.findOne({ email: values.email });
     if (existingUser) {
@@ -54,15 +52,21 @@ export async function signup(values: z.infer<typeof signupSchema>) {
     
     return { success: true };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
+    if (error.message.includes("JWT_SECRET")) {
+      return { error: 'Authentication service is not configured on the server.' };
+    }
     return { error: 'An unexpected error occurred. Please try again.' };
   }
 }
 
 export async function login(values: z.infer<typeof loginSchema>) {
     try {
-        await dbConnect();
+        const conn = await dbConnect();
+        if (!conn) {
+            return { error: 'Database is not configured. Please contact the administrator.' };
+        }
 
         const user = await User.findOne({ email: values.email });
         if (!user) {
@@ -78,8 +82,11 @@ export async function login(values: z.infer<typeof loginSchema>) {
         
         return { success: true };
 
-    } catch (error) {
+    } catch (error: any) {
         console.error(error);
+        if (error.message.includes("JWT_SECRET")) {
+            return { error: 'Authentication service is not configured on the server.' };
+        }
         return { error: 'An unexpected error occurred. Please try again.' };
     }
 }
@@ -90,7 +97,12 @@ export async function logoutAction() {
 
 // --- Session Management ---
 async function createAndSetSession(userId: string) {
-    const token = jwt.sign({ userId }, JWT_SECRET!, { expiresIn: '7d' });
+    const JWT_SECRET = process.env.JWT_SECRET;
+    if (!JWT_SECRET) {
+      throw new Error('Please define the JWT_SECRET environment variable');
+    }
+
+    const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' });
     cookies().set(COOKIE_NAME, token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -100,15 +112,26 @@ async function createAndSetSession(userId: string) {
 }
 
 export async function getCurrentUser(): Promise<UserType | null> {
+    const JWT_SECRET = process.env.JWT_SECRET;
+    if (!JWT_SECRET) {
+        console.warn('JWT_SECRET not defined. Authentication is disabled.');
+        return null;
+    }
+
     const token = cookies().get(COOKIE_NAME)?.value;
     if (!token) return null;
 
     try {
-        const decoded = jwt.verify(token, JWT_SECRET!) as { userId: string };
-        await dbConnect();
+        const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+        const conn = await dbConnect();
+        if (!conn) {
+          return null;
+        }
         const user = await User.findById(decoded.userId).select('-password');
         return user ? JSON.parse(JSON.stringify(user)) : null;
     } catch (error) {
+        // This can happen if the token is invalid or expired.
+        // It's normal, so we don't need to log an error.
         return null;
     }
 }
@@ -130,7 +153,10 @@ export async function createProject(values: z.infer<typeof createProjectSchema>)
     }
 
     try {
-        await dbConnect();
+        const conn = await dbConnect();
+        if (!conn) {
+            return { error: 'Database is not configured. Please contact the administrator.' };
+        }
         const newProject = new Project({
             ...values,
             createdBy: user.id,

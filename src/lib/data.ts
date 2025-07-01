@@ -2,12 +2,16 @@
 
 import dbConnect, { Project, User, Pixel } from './mongodb';
 import type { Project as ProjectType, User as UserType } from './types';
-import { unstable_noStore as noStore } from 'next/cache';
+import { unstable_noStore as noStore, revalidatePath } from 'next/cache';
 
 export async function getProjects(count?: number): Promise<ProjectType[]> {
   noStore();
   try {
-    await dbConnect();
+    const conn = await dbConnect();
+    if (!conn) {
+      console.warn("Database not connected. Returning empty array for getProjects.");
+      return [];
+    }
     const query = Project.find().sort({ createdAt: -1 });
     if (count) {
       query.limit(count);
@@ -23,7 +27,11 @@ export async function getProjects(count?: number): Promise<ProjectType[]> {
 export async function getCompletedProjects(count: number): Promise<ProjectType[]> {
     noStore();
     try {
-      await dbConnect();
+      const conn = await dbConnect();
+      if (!conn) {
+        console.warn("Database not connected. Returning empty array for getCompletedProjects.");
+        return [];
+      }
       const projects = await Project.find({ status: 'Completed' })
         .sort({ createdAt: -1 })
         .limit(count)
@@ -38,7 +46,11 @@ export async function getCompletedProjects(count: number): Promise<ProjectType[]
 export async function getProjectById(id: string): Promise<ProjectType | null> {
   noStore();
   try {
-    await dbConnect();
+    const conn = await dbConnect();
+    if (!conn) {
+      console.warn(`Database not connected. Returning null for getProjectById(${id}).`);
+      return null;
+    }
     const project = await Project.findById(id).exec();
     return project ? JSON.parse(JSON.stringify(project)) : null;
   } catch (error) {
@@ -50,7 +62,11 @@ export async function getProjectById(id: string): Promise<ProjectType | null> {
 export async function getUserProfile(userId: string): Promise<UserType | null> {
     noStore();
     try {
-      await dbConnect();
+      const conn = await dbConnect();
+      if (!conn) {
+        console.warn(`Database not connected. Returning null for getUserProfile(${userId}).`);
+        return null;
+      }
       const user = await User.findById(userId).select('-password').exec();
       return user ? JSON.parse(JSON.stringify(user)) : null;
     } catch (error) {
@@ -64,7 +80,11 @@ export async function getUserProfile(userId: string): Promise<UserType | null> {
 export async function getProjectPixels(projectId: string): Promise<Map<string, string>> {
     noStore();
     try {
-        await dbConnect();
+        const conn = await dbConnect();
+        if (!conn) {
+            console.warn(`Database not connected. Returning empty map for getProjectPixels(${projectId}).`);
+            return new Map();
+        }
         const pixels = await Pixel.find({ projectId }).exec();
         const pixelMap = new Map<string, string>();
         pixels.forEach(p => {
@@ -79,7 +99,10 @@ export async function getProjectPixels(projectId: string): Promise<Map<string, s
 
 export async function placePixel(projectId: string, userId: string, x: number, y: number, color: string) {
     try {
-        await dbConnect();
+        const conn = await dbConnect();
+        if (!conn) {
+            return { error: 'Database is not configured. Pixel cannot be placed.' };
+        }
         
         await Pixel.findOneAndUpdate(
             { projectId, x, y },
@@ -104,7 +127,11 @@ export async function placePixel(projectId: string, userId: string, x: number, y
 export async function getContributors(projectId: string): Promise<UserType[]> {
     noStore();
     try {
-        await dbConnect();
+        const conn = await dbConnect();
+        if (!conn) {
+            console.warn(`Database not connected. Returning empty array for getContributors(${projectId}).`);
+            return [];
+        }
         
         // This implementation can be slow and expensive on projects with many pixels.
         // A better approach for production would be to maintain a 'contributors' array on the Project model.

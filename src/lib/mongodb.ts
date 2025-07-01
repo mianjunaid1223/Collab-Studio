@@ -1,12 +1,6 @@
 import mongoose, { Schema, type Model, type Document } from 'mongoose';
 import type { User as UserType, Project as ProjectType, Pixel as PixelType } from './types';
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
-}
-
 let cached = global.mongoose;
 
 if (!cached) {
@@ -14,6 +8,15 @@ if (!cached) {
 }
 
 async function dbConnect() {
+  const MONGODB_URI = process.env.MONGODB_URI;
+
+  if (!MONGODB_URI) {
+    console.warn(
+      'MONGODB_URI not defined. App is in a read-only state. Please create a .env.local file with your MongoDB connection string to enable database operations.'
+    );
+    return null;
+  }
+
   if (cached.conn) {
     return cached.conn;
   }
@@ -23,11 +26,18 @@ async function dbConnect() {
       bufferCommands: false,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
       return mongoose;
     });
   }
-  cached.conn = await cached.promise;
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
+  }
+  
   return cached.conn;
 }
 
