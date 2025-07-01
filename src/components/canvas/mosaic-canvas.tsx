@@ -30,43 +30,41 @@ export function MosaicCanvas({ project, contributions, onContribute, user, activ
     };
 
     return (
-        <div className="flex items-center justify-center w-full h-full p-4">
-            <div 
-                className="grid bg-card border-2 border-border/20 shadow-2xl aspect-square w-full h-full max-w-full max-h-full object-contain"
-                style={{
-                    gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
-                    gridTemplateRows: `repeat(${GRID_SIZE}, 1fr)`,
-                }}
-            >
-                {Array.from({ length: GRID_SIZE * GRID_SIZE }).map((_, i) => {
-                    const x = i % GRID_SIZE;
-                    const y = Math.floor(i / GRID_SIZE);
-                    const key = `${x},${y}`;
-                    const cellData = grid.get(key);
+        <div 
+            className="grid bg-card border-2 border-border/20 shadow-2xl aspect-square w-full max-w-full h-full max-h-full rounded-lg"
+            style={{
+                gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
+                gridTemplateRows: `repeat(${GRID_SIZE}, 1fr)`,
+            }}
+        >
+            {Array.from({ length: GRID_SIZE * GRID_SIZE }).map((_, i) => {
+                const x = i % GRID_SIZE;
+                const y = Math.floor(i / GRID_SIZE);
+                const key = `${x},${y}`;
+                const cellData = grid.get(key);
 
-                    return (
-                        <div
-                            key={key}
-                            className="w-full h-full border-r border-b border-muted/20 cursor-pointer flex items-center justify-center"
-                            onClick={() => handleCellClick(x, y)}
-                            onMouseEnter={() => setHoveredCell({ x, y })}
-                            onMouseLeave={() => setHoveredCell(null)}
-                        >
-                             {cellData ? (
-                                <div 
-                                    className={cn('w-full h-full', cellData.shape === 'Circle' && 'rounded-full')}
-                                    style={{ backgroundColor: cellData.color }}
-                                />
-                            ) : hoveredCell && hoveredCell.x === x && hoveredCell.y === y && user && (
-                                <div 
-                                    className={cn('w-full h-full transition-colors duration-100', activeShape === 'Circle' && 'rounded-full')}
-                                    style={{ backgroundColor: activeColor, opacity: 0.5 }}
-                                />
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
+                return (
+                    <div
+                        key={key}
+                        className="w-full h-full border-r border-b border-muted/20 cursor-pointer flex items-center justify-center"
+                        onClick={() => handleCellClick(x, y)}
+                        onMouseEnter={() => setHoveredCell({ x, y })}
+                        onMouseLeave={() => setHoveredCell(null)}
+                    >
+                         {cellData ? (
+                            <div 
+                                className={cn('w-full h-full', cellData.shape === 'Circle' && 'rounded-full')}
+                                style={{ backgroundColor: cellData.color }}
+                            />
+                        ) : hoveredCell && hoveredCell.x === x && hoveredCell.y === y && user && (
+                            <div 
+                                className={cn('w-full h-full transition-colors duration-100', activeShape === 'Circle' && 'rounded-full')}
+                                style={{ backgroundColor: activeColor, opacity: 0.5 }}
+                            />
+                        )}
+                    </div>
+                );
+            })}
         </div>
     );
 }

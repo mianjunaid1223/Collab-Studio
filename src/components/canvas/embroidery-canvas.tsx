@@ -60,46 +60,44 @@ export function EmbroideryCanvas({ project, contributions, onContribute, user, a
     };
     
     return (
-        <div className="w-full h-full flex items-center justify-center p-4">
-            <svg
-                ref={svgRef}
-                viewBox="0 0 800 800"
-                className="aspect-square w-full h-full max-w-full max-h-full object-contain bg-card shadow-2xl cursor-crosshair"
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp} // End drawing if mouse leaves canvas
-                style={{
-                  backgroundColor: '#fdfdf5',
-                  backgroundImage: 'linear-gradient(rgba(180,160,150,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(180,160,150,0.05) 1px, transparent 1px)',
-                  backgroundSize: '15px 15px',
-                }}
-            >
-                {contributions.map((c) => (
-                    <line
-                        key={c.id}
-                        x1={c.data.startX}
-                        y1={c.data.startY}
-                        x2={c.data.endX}
-                        y2={c.data.endY}
-                        stroke={c.data.color}
-                        strokeWidth={c.data.width || 3}
-                        strokeLinecap="round"
-                    />
-                ))}
-                {isDrawing && startPoint && currentPoint && (
-                    <line
-                        x1={startPoint.x}
-                        y1={startPoint.y}
-                        x2={currentPoint.x}
-                        y2={currentPoint.y}
-                        stroke={activeColor}
-                        strokeWidth={activeWidth}
-                        strokeLinecap="round"
-                        strokeDasharray="5,5"
-                    />
-                )}
-            </svg>
-        </div>
+        <svg
+            ref={svgRef}
+            viewBox="0 0 800 800"
+            className="aspect-square w-full max-w-full h-full max-h-full bg-card shadow-2xl cursor-crosshair rounded-lg"
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp} // End drawing if mouse leaves canvas
+            style={{
+                backgroundColor: '#fdfdf5',
+                backgroundImage: 'linear-gradient(rgba(180,160,150,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(180,160,150,0.05) 1px, transparent 1px)',
+                backgroundSize: '15px 15px',
+            }}
+        >
+            {contributions.map((c) => (
+                <line
+                    key={c.id}
+                    x1={c.data.startX}
+                    y1={c.data.startY}
+                    x2={c.data.endX}
+                    y2={c.data.endY}
+                    stroke={c.data.color}
+                    strokeWidth={c.data.width || 3}
+                    strokeLinecap="round"
+                />
+            ))}
+            {isDrawing && startPoint && currentPoint && (
+                <line
+                    x1={startPoint.x}
+                    y1={startPoint.y}
+                    x2={currentPoint.x}
+                    y2={currentPoint.y}
+                    stroke={activeColor}
+                    strokeWidth={activeWidth}
+                    strokeLinecap="round"
+                    strokeDasharray="5,5"
+                />
+            )}
+        </svg>
     );
 }
