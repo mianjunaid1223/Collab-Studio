@@ -1,6 +1,6 @@
 import type { Types } from 'mongoose';
 
-export const canvasTypes = ['Embroidery', 'Mosaic', 'Watercolor', 'Typographic', 'AudioVisual'] as const;
+export const canvasTypes = ['Embroidery', 'Mosaic', 'Watercolor', 'AudioVisual'] as const;
 export type CanvasType = typeof canvasTypes[number];
 
 export type Project = {

@@ -1,10 +1,9 @@
 'use client';
 
-import type { Project, Contribution, User } from "@/lib/types";
+import type { Project, Contribution, User, CanvasType } from "@/lib/types";
 import { EmbroideryCanvas } from "./embroidery-canvas";
 import { MosaicCanvas } from "./mosaic-canvas";
 import { WatercolorCanvas } from "./watercolor-canvas";
-import { TypographicCanvas } from "./typographic-canvas";
 import { AudioVisualCanvas } from "./audiovisual-canvas";
 
 interface CanvasSwitcherProps {
@@ -13,23 +12,49 @@ interface CanvasSwitcherProps {
   onContribute: (data: any) => Promise<void>;
   user: User | null;
   activeColor: string;
-  activeChar: string;
+  activeShape: 'Square' | 'Circle';
+  activeSize: number;
+  activeWidth: number;
+  activeWaveform: 'sine' | 'square' | 'triangle' | 'sawtooth';
 }
 
-export function CanvasSwitcher({ project, contributions, onContribute, user, activeColor, activeChar }: CanvasSwitcherProps) {
-  const props = { project, contributions, onContribute, user, activeColor, activeChar };
-
+export function CanvasSwitcher({ project, contributions, onContribute, user, ...toolProps }: CanvasSwitcherProps) {
+  
   switch (project.canvasType) {
     case 'Embroidery':
-      return <EmbroideryCanvas project={props.project} contributions={props.contributions} onContribute={props.onContribute} user={props.user} />;
+      return <EmbroideryCanvas 
+        project={project} 
+        contributions={contributions} 
+        onContribute={onContribute} 
+        user={user} 
+        activeWidth={toolProps.activeWidth} 
+        />;
     case 'Mosaic':
-      return <MosaicCanvas {...props} />;
+      return <MosaicCanvas 
+        project={project}
+        contributions={contributions}
+        onContribute={onContribute}
+        user={user}
+        activeColor={toolProps.activeColor}
+        activeShape={toolProps.activeShape}
+        />;
     case 'Watercolor':
-      return <WatercolorCanvas {...props} />;
-    case 'Typographic':
-      return <TypographicCanvas {...props} />;
+      return <WatercolorCanvas
+        project={project}
+        contributions={contributions}
+        onContribute={onContribute}
+        user={user}
+        activeColor={toolProps.activeColor}
+        activeSize={toolProps.activeSize}
+       />;
     case 'AudioVisual':
-      return <AudioVisualCanvas project={props.project} contributions={props.contributions} onContribute={props.onContribute} user={props.user} />;
+      return <AudioVisualCanvas 
+        project={project} 
+        contributions={contributions} 
+        onContribute={onContribute} 
+        user={user}
+        activeWaveform={toolProps.activeWaveform}
+        />;
     default:
       return (
         <div className="text-center p-8">

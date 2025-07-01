@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Project } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Users, Shapes, Droplets, Type, Music, HelpCircle } from 'lucide-react';
+import { Users, Shapes, Droplets, Music, HelpCircle } from 'lucide-react';
 
 type ProjectCardProps = {
   project: Project;
@@ -18,8 +18,8 @@ const canvasModeDetails: Record<Project['canvasType'], { icon: React.ReactNode, 
   Embroidery: { icon: '🪡', hint: 'embroidery thread' },
   Mosaic: { icon: <Shapes className="h-4 w-4" />, hint: 'mosaic tiles' },
   Watercolor: { icon: <Droplets className="h-4 w-4" />, hint: 'watercolor paint' },
-  Typographic: { icon: <Type className="h-4 w-4" />, hint: 'letter art' },
   AudioVisual: { icon: <Music className="h-4 w-4" />, hint: 'sound wave' },
+  Typographic: { icon: <Type className="h-4 w-4" />, hint: 'letter art' },
 };
 
 export function ProjectCard({ project }: ProjectCardProps) {

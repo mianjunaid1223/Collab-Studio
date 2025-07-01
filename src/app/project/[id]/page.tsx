@@ -5,15 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Download, Users, Brush, Shapes, Droplets, Type, Music } from 'lucide-react';
+import { Download, Users, Brush, Shapes, Droplets, Music } from 'lucide-react';
 import { ProjectStatus } from '@/components/project/project-status';
 import type { Project } from '@/lib/types';
 
-const canvasModeDetails: Record<Project['canvasType'], { icon: React.ReactNode }> = {
+const canvasModeDetails: Record<Exclude<Project['canvasType'], 'Typographic'>, { icon: React.ReactNode }> = {
   Embroidery: { icon: '🪡' },
   Mosaic: { icon: <Shapes className="h-4 w-4" /> },
   Watercolor: { icon: <Droplets className="h-4 w-4" /> },
-  Typographic: { icon: <Type className="h-4 w-4" /> },
   AudioVisual: { icon: <Music className="h-4 w-4" /> },
 };
 
@@ -26,7 +25,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
   }
 
   const contributors = await getContributors(project.id);
-  const modeDetails = canvasModeDetails[project.canvasType];
+  const modeDetails = canvasModeDetails[project.canvasType as Exclude<Project['canvasType'], 'Typographic'>];
 
   return (
     <div className="container mx-auto px-4 py-8">

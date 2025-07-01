@@ -7,6 +7,7 @@ interface CanvasProps {
   contributions: Contribution[];
   onContribute: (data: any) => Promise<void>;
   user: User | null;
+  activeWidth: number;
 }
 
 // Simple hash function to get a color for a user ID
@@ -22,7 +23,7 @@ const getUserColor = (userId: string) => {
 };
 
 
-export function EmbroideryCanvas({ project, contributions, onContribute, user }: CanvasProps) {
+export function EmbroideryCanvas({ project, contributions, onContribute, user, activeWidth }: CanvasProps) {
     const [isDrawing, setIsDrawing] = useState(false);
     const [startPoint, setStartPoint] = useState<{x: number, y: number} | null>(null);
     const [currentPoint, setCurrentPoint] = useState<{x: number, y: number} | null>(null);
@@ -62,6 +63,7 @@ export function EmbroideryCanvas({ project, contributions, onContribute, user }:
                 endX: currentPoint.x,
                 endY: currentPoint.y,
                 color: getUserColor(user.id),
+                width: activeWidth,
             });
         }
         setIsDrawing(false);
@@ -93,7 +95,7 @@ export function EmbroideryCanvas({ project, contributions, onContribute, user }:
                         x2={c.data.endX}
                         y2={c.data.endY}
                         stroke={c.data.color}
-                        strokeWidth="3"
+                        strokeWidth={c.data.width || 3}
                         strokeLinecap="round"
                     />
                 ))}
@@ -104,7 +106,7 @@ export function EmbroideryCanvas({ project, contributions, onContribute, user }:
                         x2={currentPoint.x}
                         y2={currentPoint.y}
                         stroke={user ? getUserColor(user.id) : '#000000'}
-                        strokeWidth="3"
+                        strokeWidth={activeWidth}
                         strokeLinecap="round"
                         strokeDasharray="5,5"
                     />

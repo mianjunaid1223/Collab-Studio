@@ -9,11 +9,12 @@ interface CanvasProps {
   onContribute: (data: any) => Promise<void>;
   user: User | null;
   activeColor: string;
+  activeShape: 'Square' | 'Circle';
 }
 
 const GRID_SIZE = 32;
 
-export function MosaicCanvas({ project, contributions, onContribute, user, activeColor }: CanvasProps) {
+export function MosaicCanvas({ project, contributions, onContribute, user, activeColor, activeShape }: CanvasProps) {
     const [hoveredCell, setHoveredCell] = useState<{x: number, y: number} | null>(null);
 
     const grid = new Map<string, Contribution['data']>();
@@ -25,7 +26,7 @@ export function MosaicCanvas({ project, contributions, onContribute, user, activ
 
     const handleCellClick = (x: number, y: number) => {
         if (!user) return;
-        onContribute({ x, y, color: activeColor });
+        onContribute({ x, y, color: activeColor, shape: activeShape });
     };
 
     return (
@@ -49,15 +50,19 @@ export function MosaicCanvas({ project, contributions, onContribute, user, activ
                     return (
                         <div
                             key={key}
-                            className="w-full h-full border-r border-b border-muted/20 cursor-pointer"
-                            style={{ backgroundColor: cellData ? cellData.color : 'transparent' }}
+                            className="w-full h-full border-r border-b border-muted/20 cursor-pointer flex items-center justify-center"
                             onClick={() => handleCellClick(x, y)}
                             onMouseEnter={() => setHoveredCell({ x, y })}
                             onMouseLeave={() => setHoveredCell(null)}
                         >
-                            {hoveredCell && hoveredCell.x === x && hoveredCell.y === y && !cellData && user && (
+                             {cellData ? (
                                 <div 
-                                    className="w-full h-full transition-colors duration-100"
+                                    className={cn('w-full h-full', cellData.shape === 'Circle' && 'rounded-full')}
+                                    style={{ backgroundColor: cellData.color }}
+                                />
+                            ) : hoveredCell && hoveredCell.x === x && hoveredCell.y === y && user && (
+                                <div 
+                                    className={cn('w-full h-full transition-colors duration-100', activeShape === 'Circle' && 'rounded-full')}
                                     style={{ backgroundColor: activeColor, opacity: 0.5 }}
                                 />
                             )}

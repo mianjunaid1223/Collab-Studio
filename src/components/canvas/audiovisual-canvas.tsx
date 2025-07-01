@@ -9,6 +9,7 @@ interface CanvasProps {
   contributions: Contribution[];
   onContribute: (data: any) => Promise<void>;
   user: User | null;
+  activeWaveform: 'sine' | 'square' | 'triangle' | 'sawtooth';
 }
 
 const COLS = 16;
@@ -17,7 +18,7 @@ const PITCHES = [523.25, 493.88, 440.00, 392.00, 349.23, 329.63, 293.66, 261.63]
 const BPM = 120;
 const SECONDS_PER_STEP = (60 / BPM) / 2; // 8th notes
 
-export function AudioVisualCanvas({ project, contributions, onContribute, user }: CanvasProps) {
+export function AudioVisualCanvas({ project, contributions, onContribute, user, activeWaveform }: CanvasProps) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentStep, setCurrentStep] = useState(-1);
 
@@ -43,7 +44,7 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user }
                     const gainNode = audioContextRef.current.createGain();
                     osc.connect(gainNode);
                     gainNode.connect(audioContextRef.current.destination);
-                    osc.type = 'sine';
+                    osc.type = activeWaveform;
                     osc.frequency.value = PITCHES[row];
                     gainNode.gain.setValueAtTime(0.3, nextNoteTimeRef.current);
                     gainNode.gain.exponentialRampToValueAtTime(0.001, nextNoteTimeRef.current + SECONDS_PER_STEP * 0.9);
@@ -55,7 +56,7 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user }
             stepRef.current = (stepRef.current + 1) % COLS;
         }
         schedulerTimerRef.current = setTimeout(scheduleNotes, 25.0);
-    }, [grid]);
+    }, [grid, activeWaveform]);
     
     const updateVisuals = useCallback(() => {
        if (!audioContextRef.current || !isPlaying) return;

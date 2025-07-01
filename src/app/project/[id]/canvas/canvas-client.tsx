@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import type { Project, Contribution, CanvasType } from '@/lib/types';
+import type { Project, Contribution, User } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Info } from 'lucide-react';
@@ -18,7 +18,10 @@ export default function CanvasClient({ project, initialContributions }: { projec
 
   // Tool state
   const [activeColor, setActiveColor] = useState('#64B5F6');
-  const [activeChar, setActiveChar] = useState('A');
+  const [activeShape, setActiveShape] = useState<'Square' | 'Circle'>('Square');
+  const [activeSize, setActiveSize] = useState(20);
+  const [activeWidth, setActiveWidth] = useState(3);
+  const [activeWaveform, setActiveWaveform] = useState<"sine" | "square" | "triangle" | "sawtooth">("sine");
 
   useEffect(() => {
     setIsClient(true);
@@ -29,7 +32,7 @@ export default function CanvasClient({ project, initialContributions }: { projec
         } catch (error) {
             console.error("Failed to poll for contributions", error);
         }
-    }, 5000);
+    }, 2000); // Increased refresh rate for more 'live' feel
 
     return () => clearInterval(interval);
   }, [project.id]);
@@ -86,7 +89,10 @@ export default function CanvasClient({ project, initialContributions }: { projec
             onContribute={handleContribute}
             user={user}
             activeColor={activeColor}
-            activeChar={activeChar}
+            activeShape={activeShape}
+            activeSize={activeSize}
+            activeWidth={activeWidth}
+            activeWaveform={activeWaveform}
           />
         ) : (
           <div className="flex flex-col items-center gap-4 text-muted-foreground">
@@ -119,8 +125,14 @@ export default function CanvasClient({ project, initialContributions }: { projec
              canvasType={project.canvasType}
              activeColor={activeColor}
              onColorChange={setActiveColor}
-             activeChar={activeChar}
-             onCharChange={setActiveChar}
+             activeShape={activeShape}
+             onShapeChange={setActiveShape}
+             activeSize={activeSize}
+             onSizeChange={setActiveSize}
+             activeWidth={activeWidth}
+             onWidthChange={setActiveWidth}
+             activeWaveform={activeWaveform}
+             onWaveformChange={setActiveWaveform}
            />
         </div>
       </aside>

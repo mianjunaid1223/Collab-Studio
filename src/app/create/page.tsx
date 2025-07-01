@@ -24,7 +24,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useAuth } from '@/context/auth-context';
 import { createProject } from '@/app/(auth)/actions';
 import { canvasTypes, type CanvasType } from '@/lib/types';
-import { SewingPinIcon, Shapes, Droplets, Type, Music } from 'lucide-react';
+import { Shapes, Droplets, Music } from 'lucide-react';
 
 const createProjectSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters long." }),
@@ -34,11 +34,10 @@ const createProjectSchema = z.object({
 
 type CreateProjectValues = z.infer<typeof createProjectSchema>;
 
-const canvasModeDetails: Record<CanvasType, { icon: React.ReactNode, description: string }> = {
+const canvasModeDetails: Record<Exclude<CanvasType, 'Typographic'>, { icon: React.ReactNode, description: string }> = {
   Embroidery: { icon: '🪡', description: "Users stitch thread lines onto a fabric-style canvas." },
   Mosaic: { icon: <Shapes className="h-4 w-4" />, description: "Users earn and place shape tiles (triangles, circles, etc.) on a grid." },
   Watercolor: { icon: <Droplets className="h-4 w-4" />, description: "Users drop virtual ink that spreads and blends with others." },
-  Typographic: { icon: <Type className="h-4 w-4" />, description: "Contributors place letters/emojis to form visual poetry." },
   AudioVisual: { icon: <Music className="h-4 w-4" />, description: "Users place marks tied to tones, creating a playable soundscape." },
 };
 
@@ -141,7 +140,7 @@ export default function CreateProjectPage() {
                           {canvasTypes.map(type => (
                             <SelectItem key={type} value={type}>
                               <div className="flex items-center gap-2">
-                                {canvasModeDetails[type].icon}
+                                {canvasModeDetails[type as Exclude<CanvasType, 'Typographic'>].icon}
                                 <span>{type}</span>
                               </div>
                             </SelectItem>

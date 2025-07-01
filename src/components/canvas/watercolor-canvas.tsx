@@ -8,9 +8,10 @@ interface CanvasProps {
   onContribute: (data: any) => Promise<void>;
   user: User | null;
   activeColor: string;
+  activeSize: number;
 }
 
-export function WatercolorCanvas({ project, contributions, onContribute, user, activeColor }: CanvasProps) {
+export function WatercolorCanvas({ project, contributions, onContribute, user, activeColor, activeSize }: CanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const handleCanvasClick = (e: MouseEvent<HTMLDivElement>) => {
@@ -19,9 +20,8 @@ export function WatercolorCanvas({ project, contributions, onContribute, user, a
     const rect = canvasRef.current.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
-    const size = 15 + Math.random() * 10; // Random size between 15% and 25%
 
-    onContribute({ x, y, color: activeColor, size });
+    onContribute({ x, y, color: activeColor, size: activeSize });
   };
 
   return (
