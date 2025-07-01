@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Project, Contribution, User } from "@/lib/types";
@@ -18,14 +19,23 @@ const COLS = 16;
 const ROWS = 8; 
 const PITCHES = [523.25, 493.88, 440.00, 392.00, 349.23, 329.63, 293.66, 261.63]; // C Major scale, high to low
 
+const waveformColors: Record<string, string> = {
+    sine: 'bg-chart-1',
+    square: 'bg-chart-4',
+    triangle: 'bg-chart-5',
+    sawtooth: 'bg-chart-2',
+};
+
 export function AudioVisualCanvas({ project, contributions, onContribute, user, activeWaveform, activeBPM }: CanvasProps) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentStep, setCurrentStep] = useState(-1);
 
-    const grid = new Map<string, boolean>();
+    // The grid now stores the full contribution data for each note, not just a boolean.
+    const grid = new Map<string, Contribution['data']>();
     contributions.forEach(c => {
         if (c.data?.col !== undefined && c.data?.row !== undefined) {
-            grid.set(`${c.data.col},${c.data.row}`, true);
+            const key = `${c.data.col},${c.data.row}`;
+            grid.set(key, c.data);
         }
     });
 
@@ -44,12 +54,14 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
         while (nextNoteTimeRef.current < ac.currentTime + 0.1) {
             const current_col = stepRef.current;
             for (let row = 0; row < ROWS; row++) {
-                if (grid.has(`${current_col},${row}`)) {
+                const noteData = grid.get(`${current_col},${row}`);
+                if (noteData) { // Check if a note exists at this position
                     const osc = ac.createOscillator();
                     const gainNode = ac.createGain();
                     osc.connect(gainNode);
                     gainNode.connect(ac.destination);
-                    osc.type = activeWaveform;
+                    // Use the waveform stored in the note's data
+                    osc.type = noteData.waveform || 'sine';
                     osc.frequency.value = PITCHES[row];
                     gainNode.gain.setValueAtTime(0.3, nextNoteTimeRef.current);
                     gainNode.gain.exponentialRampToValueAtTime(0.001, nextNoteTimeRef.current + secondsPerStep * 0.9);
@@ -61,7 +73,7 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
             stepRef.current = (stepRef.current + 1) % COLS;
         }
         schedulerTimerRef.current = setTimeout(scheduleNotes, 25.0);
-    }, [grid, activeWaveform, secondsPerStep]);
+    }, [grid, secondsPerStep]);
     
     const visualScheduler = useCallback(() => {
         if (isPlaying && audioContextRef.current) {
@@ -105,8 +117,9 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
     const handleCellClick = (col: number, row: number) => {
         if (!user) return;
         const key = `${col},${row}`;
-        // The `active` property will be true if we are adding a note, false if removing.
-        onContribute({ col, row, active: !grid.has(key) });
+        const noteExists = grid.has(key);
+        // If adding a note, pass the active waveform. If removing, it's not needed.
+        onContribute({ col, row, active: !noteExists, waveform: activeWaveform });
     };
 
     return (
@@ -123,24 +136,30 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
                 {Array.from({ length: COLS * ROWS }).map((_, i) => {
                     const col = i % COLS;
                     const row = Math.floor(i / COLS);
-                    const isActive = grid.has(`${col},${row}`);
+                    const key = `${col},${row}`;
+                    const noteData = grid.get(key);
+                    const isActive = !!noteData;
                     const isPlayingNote = isPlaying && col === currentStep;
+
+                    const colorClass = isActive
+                        ? waveformColors[noteData.waveform as keyof typeof waveformColors] || 'bg-primary'
+                        : 'bg-muted hover:bg-muted-foreground/20';
 
                     return (
                         <div
-                            key={`${col}-${row}`}
+                            key={key}
                             className={cn(
                                 'w-full h-full border-r border-b border-muted/20 flex items-center justify-center',
-                                user ? 'cursor-pointer' : ''
+                                user ? 'cursor-pointer' : 'cursor-not-allowed'
                             )}
                             onClick={() => handleCellClick(col, row)}
                         >
                             <div className={cn(
                                 'w-3/4 h-3/4 rounded-sm transition-all duration-200',
                                 {
-                                    'bg-destructive animate-pulse': isPlayingNote && isActive, // Red and pulsing when playing
-                                    'bg-primary': isActive && !isPlayingNote, // Primary color when active but not playing
-                                    'bg-muted hover:bg-muted-foreground/20': !isActive, // Muted when inactive
+                                    'bg-destructive animate-pulse': isPlayingNote && isActive,
+                                    [colorClass]: !isPlayingNote,
+                                    'opacity-50': isPlayingNote && !isActive,
                                 }
                             )} />
                         </div>
