@@ -23,14 +23,13 @@ const waveformColors: Record<string, string> = {
     sine: 'bg-primary',
     square: 'bg-chart-3',
     triangle: 'bg-chart-4',
-    sawtooth: 'bg-destructive',
+    sawtooth: 'bg-destructive/80',
 };
 
 export function AudioVisualCanvas({ project, contributions, onContribute, user, activeWaveform, activeBPM }: CanvasProps) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentStep, setCurrentStep] = useState(-1);
 
-    // The grid now stores the full contribution data for each note, not just a boolean.
     const grid = new Map<string, Contribution['data']>();
     contributions.forEach(c => {
         if (c.data?.col !== undefined && c.data?.row !== undefined) {
@@ -46,6 +45,7 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
     const schedulerTimerRef = useRef<NodeJS.Timeout | null>(null);
     const nextNoteTimeRef = useRef(0.0);
     const stepRef = useRef(0);
+    const playStartTimeRef = useRef(0.0);
 
     const scheduleNotes = useCallback(() => {
         if (!audioContextRef.current) return;
@@ -55,12 +55,11 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
             const current_col = stepRef.current;
             for (let row = 0; row < ROWS; row++) {
                 const noteData = grid.get(`${current_col},${row}`);
-                if (noteData) { // Check if a note exists at this position
+                if (noteData) {
                     const osc = ac.createOscillator();
                     const gainNode = ac.createGain();
                     osc.connect(gainNode);
                     gainNode.connect(ac.destination);
-                    // Use the waveform stored in the note's data
                     osc.type = noteData.waveform || 'sine';
                     osc.frequency.value = PITCHES[row];
                     gainNode.gain.setValueAtTime(0.3, nextNoteTimeRef.current);
@@ -76,9 +75,11 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
     }, [grid, secondsPerStep]);
     
     const visualScheduler = useCallback(() => {
-        if (isPlaying && audioContextRef.current) {
-            const timeSincePlayStart = audioContextRef.current.currentTime - (nextNoteTimeRef.current - (stepRef.current + COLS) * secondsPerStep);
-            const step = Math.floor(timeSincePlayStart / secondsPerStep) % COLS;
+        if (isPlaying && audioContextRef.current && playStartTimeRef.current > 0) {
+            const timeSincePlayStart = audioContextRef.current.currentTime - playStartTimeRef.current;
+            const totalLoopTime = secondsPerStep * COLS;
+            const currentLoopTime = timeSincePlayStart % totalLoopTime;
+            const step = Math.floor(currentLoopTime / secondsPerStep);
             setCurrentStep(step);
         }
         animationFrameId.current = requestAnimationFrame(visualScheduler);
@@ -91,6 +92,7 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
             if(schedulerTimerRef.current) clearTimeout(schedulerTimerRef.current);
             if(animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
             setCurrentStep(-1);
+            playStartTimeRef.current = 0;
         } else {
             if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
                 audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -98,7 +100,10 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
             audioContextRef.current.resume();
             setIsPlaying(true);
             stepRef.current = 0;
-            nextNoteTimeRef.current = audioContextRef.current.currentTime + 0.1;
+            
+            playStartTimeRef.current = audioContextRef.current.currentTime + 0.1;
+            nextNoteTimeRef.current = playStartTimeRef.current;
+
             scheduleNotes();
             animationFrameId.current = requestAnimationFrame(visualScheduler);
         }
@@ -116,7 +121,6 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
 
     const handleCellClick = (col: number, row: number) => {
         if (!user) return;
-        // This function now simply reports the click. The server will handle the toggle logic.
         onContribute({ col, row, waveform: activeWaveform });
     };
 
@@ -137,7 +141,9 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
                     const key = `${col},${row}`;
                     const noteData = grid.get(key);
                     const isActive = !!noteData;
-                    const isPlayingNote = isPlaying && col === currentStep;
+                    
+                    const isPlayingCol = isPlaying && col === currentStep;
+                    const isPlayingNote = isPlayingCol && isActive;
 
                     const colorClass = isActive
                         ? waveformColors[noteData.waveform as keyof typeof waveformColors] || 'bg-primary'
@@ -147,17 +153,17 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
                         <div
                             key={key}
                             className={cn(
-                                'w-full h-full border-r border-b border-muted/20 flex items-center justify-center',
-                                user ? 'cursor-pointer' : 'cursor-not-allowed'
+                                'w-full h-full border-r border-b border-muted/20 flex items-center justify-center transition-colors duration-150',
+                                user ? 'cursor-pointer' : 'cursor-not-allowed',
+                                {'bg-primary/10': isPlayingCol && !isPlayingNote}
                             )}
                             onClick={() => handleCellClick(col, row)}
                         >
                             <div className={cn(
-                                'w-3/4 h-3/4 rounded-sm transition-all duration-200',
+                                'w-3/4 h-3/4 rounded-sm transition-transform duration-100',
+                                colorClass,
                                 {
-                                    'bg-destructive animate-pulse': isPlayingNote && isActive,
-                                    [colorClass]: !isPlayingNote,
-                                    'opacity-50': isPlayingNote && !isActive,
+                                    'scale-125 shadow-lg shadow-destructive/50 !bg-destructive': isPlayingNote,
                                 }
                             )} />
                         </div>
