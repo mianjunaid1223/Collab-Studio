@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Project } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Users, Shapes, Droplets, Type, Music } from 'lucide-react';
+import { Users, Shapes, Droplets, Type, Music, HelpCircle } from 'lucide-react';
 
 type ProjectCardProps = {
   project: Project;
@@ -34,7 +34,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
     }
   };
 
-  const modeDetails = canvasModeDetails[project.canvasType];
+  const modeDetails = canvasModeDetails[project.canvasType] || { icon: <HelpCircle className="h-4 w-4" />, hint: 'art' };
 
   return (
     <Link href={`/project/${project.id}`}>
@@ -77,7 +77,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
            <div className="flex items-center">
              <Badge variant="secondary" className="flex items-center gap-1.5">
                 {modeDetails.icon}
-                {project.canvasType}
+                {project.canvasType || "Unknown"}
             </Badge>
            </div>
            <div className="flex items-center">
