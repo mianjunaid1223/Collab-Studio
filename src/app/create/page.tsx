@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { z } from 'zod';
+import { z } from 'zod';
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -21,8 +21,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { createProjectSchema, createProjectAction } from './actions';
 import { useAuth } from '@/context/auth-context';
+import { createProject, getUserProfile } from '@/lib/firestore';
+
+const createProjectSchema = z.object({
+  title: z.string().min(3, { message: "Title must be at least 3 characters long." }),
+  description: z.string().min(10, { message: "Description must be at least 10 characters long." }),
+  width: z.coerce.number().int().min(16, { message: "Width must be at least 16px." }).max(256, { message: "Width must be at most 256px." }),
+  height: z.coerce.number().int().min(16, { message: "Height must be at least 16px." }).max(256, { message: "Height must be at most 256px." }),
+  theme: z.string().min(1, { message: "A theme must be selected." }),
+});
 
 type CreateProjectValues = z.infer<typeof createProjectSchema>;
 
@@ -51,16 +59,41 @@ export default function CreateProjectPage() {
   }
 
   async function onSubmit(values: CreateProjectValues) {
+    if (!user) {
+      toast({
+        title: "Not Authenticated",
+        description: "You must be logged in to create a project.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     startTransition(async () => {
       try {
-        await createProjectAction(values);
+        const userProfile = await getUserProfile(user.uid);
+        if (!userProfile) {
+          throw new Error('User profile not found. Please try logging in again.');
+        }
+
+        const newProjectData = {
+          ...values,
+          createdBy: user.uid,
+          creatorName: userProfile.name,
+          creatorAvatar: userProfile.avatar,
+        };
+
+        const newProjectId = await createProject(newProjectData);
+        
         toast({
           title: "Project Created!",
           description: "Your new canvas is ready for collaboration.",
         });
+        
+        router.push(`/project/${newProjectId}`);
+
       } catch (error: any) {
         toast({
-          title: "Error",
+          title: "Error Creating Project",
           description: error.message || "Failed to create project. Please try again.",
           variant: "destructive",
         });
