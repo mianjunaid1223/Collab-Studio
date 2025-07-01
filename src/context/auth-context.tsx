@@ -14,10 +14,6 @@ type AuthContextType = {
   signOut: () => Promise<void>;
 };
 
-// Initialize Firebase Auth on the client. It's safe to do this at the module level
-// because this is a client component module.
-const auth = app ? getAuth(app) : null;
-
 const AuthContext = createContext<AuthContextType>({
   user: null,
   appUser: null,
@@ -30,41 +26,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [appUser, setAppUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authInstance, setAuthInstance] = useState<Auth | null>(null);
 
   useEffect(() => {
-    if (!auth) {
-      setLoading(false); // If firebase isn't configured, stop loading.
-      return;
-    }
+    if (app) {
+      const auth = getAuth(app);
+      setAuthInstance(auth);
 
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        // Fetch the user's profile from Firestore
-        try {
+      const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+        setUser(currentUser);
+        if (currentUser) {
+          try {
             const profile = await getUserProfile(currentUser.uid);
             setAppUser(profile);
-        } catch (error) {
+          } catch (error) {
             console.error("Failed to fetch user profile:", error);
             setAppUser(null);
+          }
+        } else {
+          setAppUser(null);
         }
-      } else {
-        setAppUser(null);
-      }
-      setLoading(false);
-    });
+        setLoading(false);
+      });
 
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
+      return () => unsubscribe();
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const signOut = async () => {
-    if (auth) {
-        await firebaseSignOut(auth);
+    if (authInstance) {
+      await firebaseSignOut(authInstance);
     }
   };
 
-  const value = { user, appUser, auth, loading, signOut };
+  const value = { user, appUser, auth: authInstance, loading, signOut };
 
   if (loading) {
     return (

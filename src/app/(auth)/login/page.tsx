@@ -47,11 +47,11 @@ export default function LoginPage() {
   });
 
   const onSubmit = (values: LoginValues) => {
+    if (!auth) {
+      toast({ title: "Login Failed", description: "Firebase not configured.", variant: "destructive" });
+      return;
+    }
     startTransition(async () => {
-      if (!auth) {
-        toast({ title: "Login Failed", description: "Firebase not configured.", variant: "destructive" });
-        return;
-      }
       try {
         await signInWithEmailAndPassword(auth, values.email, values.password);
         toast({ title: "Login Successful", description: "Welcome back!" });
@@ -64,11 +64,11 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = () => {
+    if (!auth) {
+      toast({ title: "Login Failed", description: "Firebase not configured.", variant: "destructive" });
+      return;
+    }
     startTransition(async () => {
-      if (!auth) {
-        toast({ title: "Login Failed", description: "Firebase not configured.", variant: "destructive" });
-        return;
-      }
       const provider = new GoogleAuthProvider();
       try {
         const result = await signInWithPopup(auth, provider);

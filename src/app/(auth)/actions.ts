@@ -2,14 +2,10 @@
 
 import { z } from 'zod';
 import { createUserProfile, getUserProfile } from '@/lib/firestore';
-import { getFirestore } from 'firebase/firestore';
-import { app } from '@/lib/firebase';
 
-const FIREBASE_NOT_CONFIGURED_ERROR = "Firebase is not configured. Please add your credentials to a .env.local file.";
-const db = app ? getFirestore(app) : null;
+const FIREBASE_NOT_CONFIGURED_ERROR = "Firebase is not configured. Please check your environment variables.";
 
 export async function handleGoogleUser(user: { uid: string; displayName: string | null; email: string | null; photoURL: string | null; }) {
-  if (!db) return { error: FIREBASE_NOT_CONFIGURED_ERROR };
   try {
     const userProfile = await getUserProfile(user.uid);
     if (!userProfile) {
@@ -24,6 +20,9 @@ export async function handleGoogleUser(user: { uid: string; displayName: string 
     }
     return { success: true };
   } catch (error: any) {
+    if (error.message === FIREBASE_NOT_CONFIGURED_ERROR) {
+      return { error: FIREBASE_NOT_CONFIGURED_ERROR };
+    }
     return { error: error.message };
   }
 }
@@ -35,7 +34,6 @@ const createUserSchema = z.object({
 });
 
 export async function createUserInDb(values: z.infer<typeof createUserSchema>) {
-  if (!db) return { error: FIREBASE_NOT_CONFIGURED_ERROR };
   try {
     await createUserProfile(values.userId, {
       name: values.username,
@@ -44,6 +42,9 @@ export async function createUserInDb(values: z.infer<typeof createUserSchema>) {
     });
     return { success: true };
   } catch (error: any) {
+    if (error.message === FIREBASE_NOT_CONFIGURED_ERROR) {
+      return { error: FIREBASE_NOT_CONFIGURED_ERROR };
+    }
     return { error: error.message };
   }
 }

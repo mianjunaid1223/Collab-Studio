@@ -48,11 +48,11 @@ export default function SignupPage() {
   });
 
   const onSubmit = (values: SignupValues) => {
+    if (!auth) {
+      toast({ title: "Sign Up Failed", description: "Firebase not configured.", variant: "destructive" });
+      return;
+    }
     startTransition(async () => {
-      if (!auth) {
-        toast({ title: "Sign Up Failed", description: "Firebase not configured.", variant: "destructive" });
-        return;
-      }
       try {
         const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
         const { user } = userCredential;
@@ -78,11 +78,11 @@ export default function SignupPage() {
   };
 
   const handleGoogleLogin = () => {
+    if (!auth) {
+      toast({ title: "Sign Up Failed", description: "Firebase not configured.", variant: "destructive" });
+      return;
+    }
     startTransition(async () => {
-      if (!auth) {
-        toast({ title: "Sign Up Failed", description: "Firebase not configured.", variant: "destructive" });
-        return;
-      }
       const provider = new GoogleAuthProvider();
       try {
         const result = await signInWithPopup(auth, provider);
