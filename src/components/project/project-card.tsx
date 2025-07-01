@@ -25,22 +25,22 @@ export function ProjectCard({ project }: ProjectCardProps) {
   const getStatusClass = (status: Project['status']) => {
     switch (status) {
       case 'Active':
-        return 'bg-green-500/20 text-green-700 border-green-500/50';
+        return 'bg-green-500/10 text-green-400 border-green-500/20';
       case 'Completed':
-        return 'bg-blue-500/20 text-blue-700 border-blue-500/50';
+        return 'bg-primary/10 text-primary border-primary/20';
       case 'Archived':
-        return 'bg-gray-500/20 text-gray-700 border-gray-500/50';
+        return 'bg-stone-500/10 text-stone-400 border-stone-500/20';
     }
   };
 
   const modeDetails = canvasModeDetails[project.canvasType] || { icon: <HelpCircle className="h-4 w-4" />, hint: 'art' };
 
   return (
-    <Link href={`/project/${project.id}`}>
-      <Card className="w-full h-full flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-        <CardHeader>
+    <Link href={`/project/${project.id}`} className="group">
+      <Card className="w-full h-full flex flex-col transition-all duration-300 border-2 border-transparent group-hover:border-primary/50 dark:group-hover:border-primary/80 hover:shadow-2xl hover:-translate-y-1.5 bg-secondary/20 dark:bg-secondary/40">
+        <CardHeader className="p-0">
           <div
-            className="aspect-video w-full rounded-md bg-muted overflow-hidden flex items-center justify-center"
+            className="aspect-video w-full rounded-t-lg bg-muted overflow-hidden flex items-center justify-center relative"
           >
              <Image 
                 src={`https://placehold.co/400x225/e3f2fd/64b5f6.png?text=${encodeURIComponent(project.title)}`}
@@ -48,15 +48,17 @@ export function ProjectCard({ project }: ProjectCardProps) {
                 width={400} 
                 height={225} 
                 alt={project.title} 
-                className="w-full h-full object-cover" 
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
             />
+            <div className="absolute top-3 right-3">
+              <Badge variant="outline" className={cn('backdrop-blur-md', getStatusClass(project.status))}>
+                {project.status}
+              </Badge>
+            </div>
           </div>
         </CardHeader>
-        <CardContent className="flex-grow">
-          <Badge variant="outline" className={cn('mb-2', getStatusClass(project.status))}>
-            {project.status}
-          </Badge>
-          <CardTitle className="text-xl font-headline mb-2">{project.title}</CardTitle>
+        <CardContent className="flex-grow p-4">
+          <CardTitle className="text-lg font-headline mb-2 truncate group-hover:text-primary">{project.title}</CardTitle>
           <div className="flex items-center text-sm text-muted-foreground mb-4">
             <Avatar className="h-6 w-6 mr-2">
               <AvatarImage src={project.creatorAvatar} alt={project.creatorName} />
@@ -66,13 +68,13 @@ export function ProjectCard({ project }: ProjectCardProps) {
           </div>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between items-center">
-              <span>Progress</span>
-              <span>{project.completionPercentage}%</span>
+              <span className="text-muted-foreground">Progress</span>
+              <span className="font-mono font-medium">{project.completionPercentage}%</span>
             </div>
             <Progress value={project.completionPercentage} aria-label={`${project.completionPercentage}% complete`} />
           </div>
         </CardContent>
-        <CardFooter className="flex justify-between text-sm text-muted-foreground border-t pt-4">
+        <CardFooter className="flex justify-between text-sm text-muted-foreground border-t pt-3 pb-3 px-4">
            <div className="flex items-center">
              <Badge variant="secondary" className="flex items-center gap-1.5">
                 {modeDetails.icon}

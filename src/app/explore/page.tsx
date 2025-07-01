@@ -15,12 +15,12 @@ export default async function ExplorePage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <header className="mb-8">
-        <h1 className="text-4xl font-bold font-headline mb-2">Explore Canvases</h1>
-        <p className="text-lg text-muted-foreground">Find a project that inspires you and start contributing.</p>
+      <header className="mb-8 text-center">
+        <h1 className="text-4xl font-bold font-headline mb-2 tracking-tighter">Explore Canvases</h1>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Find a project that inspires you and start contributing. The next masterpiece could be one contribution away.</p>
       </header>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-8 sticky top-16 bg-background/95 py-4 z-10 backdrop-blur-sm">
+      <div className="flex flex-col md:flex-row gap-4 mb-8 sticky top-16 bg-background/80 py-4 z-10 backdrop-blur-sm -mx-4 px-4 border-b">
         <div className="relative flex-grow">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input placeholder="Search by title or creator..." className="pl-10" />
@@ -51,24 +51,34 @@ export default async function ExplorePage() {
         </div>
       </div>
       
-      <div>
+      <div className="mb-16">
         <h2 className="text-3xl font-bold font-headline mb-6">Active Projects</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {ongoingProjects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
-        </div>
-        {ongoingProjects.length === 0 && <p className="text-muted-foreground col-span-full text-center py-8">No active projects found. Why not create one?</p>}
+        {ongoingProjects.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {ongoingProjects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+            ))}
+            </div>
+        ) : (
+             <div className="text-center py-16 text-muted-foreground border-2 border-dashed rounded-lg">
+                <p>No active projects found. Why not create one?</p>
+            </div>
+        )}
       </div>
 
-       <div className="mt-16">
-        <h2 className="text-3xl font-bold font-headline mb-6 text-center">Completed Works</h2>
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {completedProjects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
-        </div>
-        {completedProjects.length === 0 && <p className="text-muted-foreground col-span-full text-center py-8">No masterpieces have been completed yet.</p>}
+       <div>
+        <h2 className="text-3xl font-bold font-headline mb-6">Completed Works</h2>
+        {completedProjects.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {completedProjects.map((project) => (
+                    <ProjectCard key={project.id} project={project} />
+                ))}
+            </div>
+        ) : (
+            <div className="text-center py-16 text-muted-foreground border-2 border-dashed rounded-lg">
+                <p>No masterpieces have been completed yet.</p>
+            </div>
+        )}
        </div>
     </div>
   );

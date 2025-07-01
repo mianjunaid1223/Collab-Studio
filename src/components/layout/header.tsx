@@ -40,13 +40,13 @@ export function Header() {
   const closeSheet = () => setSheetOpen(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         <div className="mr-4 hidden md:flex">
-          <Link href="/" className="mr-6 flex items-center space-x-2">
-            <Palette className="h-6 w-6 text-primary" />
+          <Link href="/" className="mr-6 flex items-center space-x-2 group">
+            <Palette className="h-6 w-6 text-primary transition-transform group-hover:scale-110" />
             <span className="hidden font-bold sm:inline-block font-headline">
-              Pixel Canvas Collab
+              Collab Canvas
             </span>
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
@@ -75,7 +75,7 @@ export function Header() {
           <SheetContent side="left" className="pr-0">
             <Link href="/" className="flex items-center space-x-2" onClick={closeSheet}>
               <Palette className="h-6 w-6 text-primary" />
-              <span className="font-bold font-headline">Pixel Canvas Collab</span>
+              <span className="font-bold font-headline">Collab Canvas</span>
             </Link>
             <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
               <div className="flex flex-col space-y-3">
@@ -90,7 +90,7 @@ export function Header() {
         </Sheet>
         <Link href="/" className="flex items-center space-x-2 md:hidden">
           <Palette className="h-6 w-6 text-primary" />
-          <span className="font-bold font-headline">Pixel Canvas</span>
+          <span className="font-bold font-headline">Collab Canvas</span>
         </Link>
 
         <div className="flex flex-1 items-center justify-end space-x-2">
@@ -103,7 +103,7 @@ export function Header() {
                       variant="ghost"
                       className="relative h-10 w-10 rounded-full"
                     >
-                      <Avatar className="h-10 w-10">
+                      <Avatar className="h-10 w-10 border-2 border-transparent group-hover:border-primary">
                         <AvatarImage src={user.avatar} alt={user.name} />
                         <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                       </Avatar>

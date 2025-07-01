@@ -36,9 +36,9 @@ type CreateProjectValues = z.infer<typeof createProjectSchema>;
 
 const canvasModeDetails: Record<CanvasType, { icon: React.ReactNode, description: string }> = {
   Embroidery: { icon: '🪡', description: "Users stitch thread lines onto a fabric-style canvas." },
-  Mosaic: { icon: <Shapes className="h-4 w-4" />, description: "Users earn and place shape tiles (triangles, circles, etc.) on a grid." },
-  Watercolor: { icon: <Droplets className="h-4 w-4" />, description: "Users drop virtual ink that spreads and blends with others." },
-  AudioVisual: { icon: <Music className="h-4 w-4" />, description: "Users place marks tied to tones, creating a playable soundscape." },
+  Mosaic: { icon: <Shapes className="h-4 w-4" />, description: "Users place shape tiles on a grid." },
+  Watercolor: { icon: <Droplets className="h-4 w-4" />, description: "Users drop virtual ink that spreads and blends." },
+  AudioVisual: { icon: <Music className="h-4 w-4" />, description: "Users place notes to create a playable soundscape." },
 };
 
 export default function CreateProjectPage() {
@@ -84,14 +84,14 @@ export default function CreateProjectPage() {
     <div className="container mx-auto max-w-3xl px-4 py-12">
        <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-3xl font-headline">Create a New Canvas</CardTitle>
+          <Card className="shadow-xl">
+            <CardHeader className="text-center">
+              <CardTitle className="text-3xl font-headline tracking-tighter">Create a New Canvas</CardTitle>
               <CardDescription>
                 Describe your vision and choose a medium. The community will bring it to life.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 pt-6">
               <FormField
                 control={form.control}
                 name="title"
@@ -130,18 +130,21 @@ export default function CreateProjectPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Canvas Medium</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
                         <FormControl>
-                          <SelectTrigger disabled={isPending}>
+                          <SelectTrigger>
                             <SelectValue placeholder="Select a medium for your project" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           {canvasTypes.map(type => (
                             <SelectItem key={type} value={type}>
-                              <div className="flex items-center gap-2">
-                                {canvasModeDetails[type as CanvasType].icon}
-                                <span>{type}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-lg">{canvasModeDetails[type as CanvasType].icon}</span>
+                                <div className="flex flex-col">
+                                  <span>{type}</span>
+                                  <span className="text-xs text-muted-foreground">{canvasModeDetails[type as CanvasType].description}</span>
+                                </div>
                               </div>
                             </SelectItem>
                           ))}
@@ -154,7 +157,7 @@ export default function CreateProjectPage() {
             </CardContent>
             <CardFooter>
               <Button size="lg" className="w-full" type="submit" disabled={isPending}>
-                {isPending && <Loader2 className="animate-spin" />}
+                {isPending && <Loader2 className="mr-2 animate-spin" />}
                 {isPending ? 'Creating...' : 'Create Project'}
               </Button>
             </CardFooter>

@@ -60,12 +60,12 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] py-12">
-      <Card className="mx-auto max-w-sm w-full">
+    <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] py-12 bg-gradient-to-br from-background via-secondary/10 to-background">
+      <Card className="mx-auto max-w-sm w-full shadow-xl">
         <CardHeader>
-          <CardTitle className="text-xl font-headline">Sign Up</CardTitle>
+          <CardTitle className="text-2xl font-headline">Create an Account</CardTitle>
           <CardDescription>
-            Enter your information to create an account
+            Enter your information to start creating.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -112,14 +112,14 @@ export default function SignupPage() {
               />
               {error && <p className="text-sm font-medium text-destructive">{error}</p>}
               <Button type="submit" className="w-full" disabled={isPending}>
-                {isPending && <Loader2 className="animate-spin" />}
+                {isPending && <Loader2 className="mr-2 animate-spin" />}
                 Create an account
               </Button>
             </form>
           </Form>
           <div className="mt-4 text-center text-sm">
             Already have an account?{" "}
-            <Link href="/login" className="underline">
+            <Link href="/login" className="underline hover:text-primary">
               Log in
             </Link>
           </div>

@@ -59,12 +59,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] py-12">
-      <Card className="mx-auto max-w-sm w-full">
+    <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] py-12 bg-gradient-to-br from-background via-secondary/10 to-background">
+      <Card className="mx-auto max-w-sm w-full shadow-xl">
         <CardHeader>
-          <CardTitle className="text-2xl font-headline">Login</CardTitle>
+          <CardTitle className="text-2xl font-headline">Welcome Back</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account
+            Enter your email below to login to your account.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -90,7 +90,7 @@ export default function LoginPage() {
                   <FormItem>
                     <div className="flex items-center">
                         <FormLabel>Password</FormLabel>
-                        <Link href="#" className="ml-auto inline-block text-sm underline">
+                        <Link href="#" className="ml-auto inline-block text-sm text-muted-foreground hover:text-primary underline-offset-4 hover:underline">
                         Forgot your password?
                         </Link>
                     </div>
@@ -103,14 +103,14 @@ export default function LoginPage() {
               />
               {error && <p className="text-sm font-medium text-destructive">{error}</p>}
               <Button type="submit" className="w-full" disabled={isPending}>
-                {isPending && <Loader2 className="animate-spin" />}
+                {isPending && <Loader2 className="mr-2 animate-spin" />}
                 Login
               </Button>
             </form>
           </Form>
           <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="underline">
+            <Link href="/signup" className="underline hover:text-primary">
               Sign up
             </Link>
           </div>

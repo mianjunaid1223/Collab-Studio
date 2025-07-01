@@ -1,4 +1,3 @@
-
 import { getProjectById, getContributors, getProjectContributions } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Users, Brush, Shapes, Droplets, Music, ShieldAlert, HelpCircle } from 'lucide-react';
+import { Users, Brush, Shapes, Droplets, Music, ShieldAlert, HelpCircle, Eye } from 'lucide-react';
 import { ProjectStatus } from '@/components/project/project-status';
 import type { Project, Contribution, User } from '@/lib/types';
 import { getCurrentUser } from '@/app/(auth)/actions';
@@ -22,14 +21,13 @@ const canvasModeDetails: Partial<Record<Project['canvasType'], { icon: React.Rea
 };
 
 
-export default async function ProjectPage({ params }: { params: { id: string } }) {
+export default async function ProjectPage({ params }: { params: { id:string } }) {
   const project = await getProjectById(params.id);
 
   if (!project) {
     notFound();
   }
 
-  // Fetch all necessary data in parallel
   const [user, contributors, contributions] = await Promise.all([
     getCurrentUser(),
     getContributors(project.id),
@@ -42,10 +40,10 @@ export default async function ProjectPage({ params }: { params: { id: string } }
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        <div className="lg:col-span-2">
-          <Card className="shadow-lg">
-            <CardHeader>
-              <Badge variant="outline" className="w-fit mb-2 flex items-center gap-2">
+        <div className="lg:col-span-2 space-y-8">
+          <Card className="shadow-lg overflow-hidden">
+            <div className="p-6 bg-gradient-to-br from-secondary/50 via-background to-background">
+               <Badge variant="outline" className="w-fit mb-4 flex items-center gap-2 backdrop-blur-sm">
                 {modeDetails.icon}
                 {project.canvasType}
               </Badge>
@@ -57,19 +55,19 @@ export default async function ProjectPage({ params }: { params: { id: string } }
                 </Avatar>
                 <span>Created by <Link href={`/profile/${project.createdBy}`} className="font-medium text-primary hover:underline">{project.creatorName}</Link></span>
               </div>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <CardContent className="p-6">
               <p className="text-muted-foreground text-lg">{project.description}</p>
             </CardContent>
           </Card>
           
-          <Card className="mt-8">
-             <CardHeader>
-                <CardTitle>Enter the Canvas</CardTitle>
-             </CardHeader>
-             <CardContent className="text-center">
-                <p className="text-muted-foreground mb-4">Join other contributors and bring the vision to life.</p>
-                 <Button asChild size="lg">
+           <Card className="mt-8 bg-gradient-to-br from-primary/20 to-secondary/20">
+             <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="text-center md:text-left">
+                  <CardTitle className="text-2xl">Enter the Canvas</CardTitle>
+                  <p className="text-muted-foreground mt-1">Join others and bring this vision to life.</p>
+                </div>
+                 <Button asChild size="lg" className="w-full md:w-auto shadow-lg shadow-primary/20">
                     <Link href={`/project/${project.id}/canvas`}>
                         <Brush className="mr-2 h-5 w-5"/>
                         Start Creating
@@ -99,25 +97,23 @@ export default async function ProjectPage({ params }: { params: { id: string } }
                 Contributors ({contributors.length})
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 max-h-96 overflow-y-auto">
+            <CardContent className="space-y-1 max-h-96 overflow-y-auto">
               {contributors.length > 0 ? contributors.map(contributor => (
-                <Link href={`/profile/${contributor.id}`} key={contributor.id} className="flex items-center space-x-3 hover:bg-muted p-2 rounded-md">
+                <Link href={`/profile/${contributor.id}`} key={contributor.id} className="flex items-center space-x-3 hover:bg-accent p-2 rounded-md transition-colors">
                    <Avatar>
                     <AvatarImage src={contributor.avatar} alt={contributor.name} />
                     <AvatarFallback>{contributor.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col">
                     <span className="font-semibold text-sm">{contributor.name}</span>
-                    {/* Contribution count per user is a future improvement */}
-                    {/* <span className="text-xs text-muted-foreground">Contributed {user.totalContributions.toLocaleString()} times</span> */}
                   </div>
                 </Link>
-              )) : <p className="text-sm text-muted-foreground">Be the first to contribute!</p>}
+              )) : <p className="text-sm text-muted-foreground p-2">Be the first to contribute!</p>}
             </CardContent>
           </Card>
 
           {user?.isAdmin && (
-            <Card className="border-destructive/50">
+            <Card className="border-destructive/50 bg-destructive/5">
               <CardHeader>
                 <CardTitle className="flex items-center text-destructive">
                   <ShieldAlert className="mr-2 h-5 w-5" />
