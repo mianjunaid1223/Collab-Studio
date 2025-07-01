@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Palette, Menu, LogOut } from 'lucide-react';
+import { Palette, Menu, LogOut, Brush, Search } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -18,8 +18,8 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 
 const navLinks = [
-  { href: '/explore', label: 'Explore' },
-  { href: '/create', label: 'Create' },
+  { href: '/explore', label: 'Explore', icon: <Search className="h-4 w-4" /> },
+  { href: '/create', label: 'Create', icon: <Brush className="h-4 w-4" /> },
 ];
 
 export function Header() {
@@ -46,18 +46,20 @@ export function Header() {
           <Link href="/" className="mr-6 flex items-center space-x-2 group">
             <Palette className="h-6 w-6 text-primary transition-transform group-hover:scale-110" />
             <span className="hidden font-bold sm:inline-block font-headline">
-              Collab Canvas
+              Pixel Canvas Collab
             </span>
           </Link>
-          <nav className="flex items-center space-x-6 text-sm font-medium">
+          <nav className="flex items-center gap-1 text-sm font-medium">
             {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="transition-colors hover:text-foreground/80 text-foreground/60"
-              >
-                {link.label}
-              </Link>
+              <Button key={link.href} variant="ghost" asChild>
+                <Link
+                  href={link.href}
+                  className="transition-colors hover:text-primary text-muted-foreground gap-2"
+                >
+                  {link.icon}
+                  {link.label}
+                </Link>
+              </Button>
             ))}
           </nav>
         </div>
@@ -75,12 +77,13 @@ export function Header() {
           <SheetContent side="left" className="pr-0">
             <Link href="/" className="flex items-center space-x-2" onClick={closeSheet}>
               <Palette className="h-6 w-6 text-primary" />
-              <span className="font-bold font-headline">Collab Canvas</span>
+              <span className="font-bold font-headline">Pixel Canvas Collab</span>
             </Link>
             <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
               <div className="flex flex-col space-y-3">
                 {navLinks.map((link) => (
-                  <Link key={link.href} href={link.href} onClick={closeSheet} className="text-foreground">
+                  <Link key={link.href} href={link.href} onClick={closeSheet} className="text-foreground flex items-center gap-2">
+                     {link.icon}
                     {link.label}
                   </Link>
                 ))}
@@ -90,7 +93,7 @@ export function Header() {
         </Sheet>
         <Link href="/" className="flex items-center space-x-2 md:hidden">
           <Palette className="h-6 w-6 text-primary" />
-          <span className="font-bold font-headline">Collab Canvas</span>
+          <span className="font-bold font-headline">Pixel Canvas Collab</span>
         </Link>
 
         <div className="flex flex-1 items-center justify-end space-x-2">

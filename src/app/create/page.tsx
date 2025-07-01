@@ -5,26 +5,18 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Shapes, Droplets, Music } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useAuth } from '@/context/auth-context';
 import { createProject } from '@/app/(auth)/actions';
 import { canvasTypes, type CanvasType } from '@/lib/types';
-import { Shapes, Droplets, Music } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 const createProjectSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters long." }),
@@ -82,16 +74,20 @@ export default function CreateProjectPage() {
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-12">
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-bold font-headline tracking-tight">Create a New Canvas</h1>
+        <p className="text-lg text-muted-foreground mt-2">
+          Set the stage for a new collaborative masterpiece.
+        </p>
+      </div>
+
        <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <Card className="shadow-xl">
-            <CardHeader className="text-center">
-              <CardTitle className="text-3xl font-headline tracking-tighter">Create a New Canvas</CardTitle>
-              <CardDescription>
-                Describe your vision and choose a medium. The community will bring it to life.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6 pt-6">
+            <div className="space-y-6 rounded-lg border bg-card p-8">
+              <div>
+                <h3 className="text-xl font-semibold font-headline">Step 1: The Vision</h3>
+                <p className="text-muted-foreground mt-1">Describe the artwork you want to create with the community.</p>
+              </div>
               <FormField
                 control={form.control}
                 name="title"
@@ -123,7 +119,13 @@ export default function CreateProjectPage() {
                   </FormItem>
                 )}
               />
+            </div>
 
+            <div className="space-y-6 rounded-lg border bg-card p-8">
+                <div>
+                    <h3 className="text-xl font-semibold font-headline">Step 2: The Medium</h3>
+                    <p className="text-muted-foreground mt-1">Choose the type of canvas for this project.</p>
+                </div>
                <FormField
                   control={form.control}
                   name="canvasType"
@@ -154,14 +156,14 @@ export default function CreateProjectPage() {
                     </FormItem>
                   )}
                 />
-            </CardContent>
-            <CardFooter>
-              <Button size="lg" className="w-full" type="submit" disabled={isPending}>
+            </div>
+            
+            <div className="flex justify-end">
+              <Button size="lg" className="w-full md:w-auto" type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="mr-2 animate-spin" />}
-                {isPending ? 'Creating...' : 'Create Project'}
+                {isPending ? 'Creating...' : 'Launch Project'}
               </Button>
-            </CardFooter>
-          </Card>
+            </div>
         </form>
       </Form>
     </div>

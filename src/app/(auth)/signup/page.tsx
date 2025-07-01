@@ -60,8 +60,8 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] py-12 bg-gradient-to-br from-background via-secondary/10 to-background">
-      <Card className="mx-auto max-w-sm w-full shadow-xl">
+    <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] py-12">
+      <Card className="mx-auto max-w-sm w-full">
         <CardHeader>
           <CardTitle className="text-2xl font-headline">Create an Account</CardTitle>
           <CardDescription>

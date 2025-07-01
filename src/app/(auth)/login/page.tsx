@@ -49,9 +49,9 @@ export default function LoginPage() {
       const result = await login(values);
       if (result.success) {
         toast({ title: "Login Successful", description: "Welcome back!" });
-        refetchUser(); // Update auth context
+        refetchUser();
         router.push("/explore");
-        router.refresh(); // Ensure header updates
+        router.refresh();
       } else {
         setError(result.error || "An unexpected error occurred.");
       }
@@ -59,8 +59,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] py-12 bg-gradient-to-br from-background via-secondary/10 to-background">
-      <Card className="mx-auto max-w-sm w-full shadow-xl">
+    <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] py-12">
+      <Card className="mx-auto max-w-sm w-full">
         <CardHeader>
           <CardTitle className="text-2xl font-headline">Welcome Back</CardTitle>
           <CardDescription>

@@ -4,11 +4,26 @@ import { cn } from '@/lib/utils';
 import { Header } from '@/components/layout/header';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/context/auth-context';
+import { Poppins, PT_Sans } from 'next/font/google';
 
 export const metadata: Metadata = {
-  title: 'Collab Canvas',
+  title: 'Pixel Canvas Collab',
   description: 'A collaborative canvas for digital mindfulness and teamwork.',
 };
+
+const fontPoppins = Poppins({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-poppins',
+  weight: ['400', '500', '600', '700'],
+});
+
+const fontPtSans = PT_Sans({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-pt-sans',
+  weight: ['400', '700'],
+});
 
 export default function RootLayout({
   children,
@@ -16,12 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" style={{ colorScheme: 'dark' }} suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-      </head>
+    <html lang="en" className={cn("dark", fontPoppins.variable, fontPtSans.variable)} style={{ colorScheme: 'dark' }} suppressHydrationWarning>
       <body className={cn('min-h-screen bg-background font-body antialiased')} suppressHydrationWarning>
         <AuthProvider>
           <div className="relative flex min-h-screen flex-col">

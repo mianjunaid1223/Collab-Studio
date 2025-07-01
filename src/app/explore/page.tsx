@@ -23,11 +23,11 @@ export default async function ExplorePage() {
       <div className="flex flex-col md:flex-row gap-4 mb-8 sticky top-16 bg-background/80 py-4 z-10 backdrop-blur-sm -mx-4 px-4 border-b">
         <div className="relative flex-grow">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input placeholder="Search by title or creator..." className="pl-10" />
+          <Input placeholder="Search by title, creator, or theme..." className="pl-10 bg-secondary/50 border-0" />
         </div>
         <div className="flex gap-4">
           <Select>
-            <SelectTrigger className="w-full md:w-[180px]">
+            <SelectTrigger className="w-full md:w-[180px] bg-secondary/50 border-0">
               <SelectValue placeholder="Filter by size" />
             </SelectTrigger>
             <SelectContent>
@@ -37,15 +37,14 @@ export default async function ExplorePage() {
             </SelectContent>
           </Select>
           <Select>
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="Filter by theme" />
+            <SelectTrigger className="w-full md:w-[180px] bg-secondary/50 border-0">
+              <SelectValue placeholder="Filter by type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="fantasy">Fantasy</SelectItem>
-              <SelectItem value="sci-fi">Sci-Fi</SelectItem>
-              <SelectItem value="urban">Urban</SelectItem>
-              <SelectItem value="retro">Retro</SelectItem>
-              <SelectItem value="art">Art</SelectItem>
+              <SelectItem value="embroidery">Embroidery</SelectItem>
+              <SelectItem value="mosaic">Mosaic</SelectItem>
+              <SelectItem value="watercolor">Watercolor</SelectItem>
+              <SelectItem value="audiovisual">Audio-Visual</SelectItem>
             </SelectContent>
           </Select>
         </div>

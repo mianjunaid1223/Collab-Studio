@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -37,30 +37,32 @@ export function ProjectCard({ project }: ProjectCardProps) {
 
   return (
     <Link href={`/project/${project.id}`} className="group">
-      <Card className="w-full h-full flex flex-col transition-all duration-300 border-2 border-transparent group-hover:border-primary/50 dark:group-hover:border-primary/80 hover:shadow-2xl hover:-translate-y-1.5 bg-secondary/20 dark:bg-secondary/40">
+      <Card className="w-full h-full flex flex-col transition-all duration-300 bg-card hover:bg-accent/50 hover:-translate-y-1">
         <CardHeader className="p-0">
           <div
-            className="aspect-video w-full rounded-t-lg bg-muted overflow-hidden flex items-center justify-center relative"
+            className="aspect-video w-full rounded-t-lg bg-secondary overflow-hidden relative"
           >
              <Image 
-                src={`https://placehold.co/400x225/e3f2fd/64b5f6.png?text=${encodeURIComponent(project.title)}`}
+                src={`https://placehold.co/400x225.png`}
                 data-ai-hint={modeDetails.hint}
                 width={400} 
                 height={225} 
                 alt={project.title} 
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-70 group-hover:opacity-100" 
             />
             <div className="absolute top-3 right-3">
-              <Badge variant="outline" className={cn('backdrop-blur-md', getStatusClass(project.status))}>
+              <Badge variant="outline" className={cn('backdrop-blur-md bg-background/50', getStatusClass(project.status))}>
                 {project.status}
               </Badge>
             </div>
+             <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                <h3 className="text-lg font-headline font-semibold text-primary-foreground truncate group-hover:text-primary">{project.title}</h3>
+             </div>
           </div>
         </CardHeader>
-        <CardContent className="flex-grow p-4">
-          <CardTitle className="text-lg font-headline mb-2 truncate group-hover:text-primary">{project.title}</CardTitle>
-          <div className="flex items-center text-sm text-muted-foreground mb-4">
-            <Avatar className="h-6 w-6 mr-2">
+        <CardContent className="flex-grow p-4 space-y-4">
+           <div className="flex items-center text-sm text-muted-foreground">
+            <Avatar className="h-6 w-6 mr-2 border-2 border-secondary">
               <AvatarImage src={project.creatorAvatar} alt={project.creatorName} />
               <AvatarFallback>{project.creatorName.charAt(0)}</AvatarFallback>
             </Avatar>
@@ -81,8 +83,8 @@ export function ProjectCard({ project }: ProjectCardProps) {
                 {project.canvasType || "Unknown"}
             </Badge>
            </div>
-           <div className="flex items-center">
-             <Users className="h-4 w-4 mr-1.5" />
+           <div className="flex items-center gap-1.5">
+             <Users className="h-4 w-4" />
              <span>{project.contributorCount}</span>
            </div>
         </CardFooter>
