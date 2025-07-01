@@ -1,3 +1,4 @@
+
 import { getProjectById, getContributors, getProjectContributions } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -5,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Users, Brush, Shapes, Droplets, Music, ShieldAlert } from 'lucide-react';
+import { Users, Brush, Shapes, Droplets, Music, ShieldAlert, HelpCircle } from 'lucide-react';
 import { ProjectStatus } from '@/components/project/project-status';
 import type { Project, Contribution, User } from '@/lib/types';
 import { getCurrentUser } from '@/app/(auth)/actions';
@@ -13,7 +14,7 @@ import { AdminActions } from '@/components/project/admin-actions';
 import { DownloadButton } from '@/components/project/download-button';
 
 
-const canvasModeDetails: Record<Exclude<Project['canvasType'], 'Typographic'>, { icon: React.ReactNode }> = {
+const canvasModeDetails: Partial<Record<Project['canvasType'], { icon: React.ReactNode }>> = {
   Embroidery: { icon: '🪡' },
   Mosaic: { icon: <Shapes className="h-4 w-4" /> },
   Watercolor: { icon: <Droplets className="h-4 w-4" /> },
@@ -35,7 +36,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
     getProjectContributions(project.id)
   ]);
   
-  const modeDetails = canvasModeDetails[project.canvasType as Exclude<Project['canvasType'], 'Typographic'>];
+  const modeDetails = canvasModeDetails[project.canvasType] || { icon: <HelpCircle className="h-4 w-4" /> };
 
   return (
     <div className="container mx-auto px-4 py-8">
