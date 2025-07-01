@@ -139,20 +139,28 @@ export async function saveContribution(
 
         let newContribution: ContributionType | null = null;
         let removedData: any = null;
-
-        // --- Handle AudioVisual Toggle ---
-        // If 'active' is false, it's a removal. If 'active' is true or undefined, it's an addition.
-        if (type === 'AudioVisual' && data.active === false) {
-            const deletedContribution = await Contribution.findOneAndDelete({
+        
+        // More robust logic for AudioVisual note toggling
+        if (type === 'AudioVisual') {
+            const existingNote = await Contribution.findOne({
                 projectId,
                 'data.col': data.col,
                 'data.row': data.row
-            }).lean();
-            
-            if (!deletedContribution) return null; // Nothing was deleted, so no update needed.
-            removedData = deletedContribution.data;
+            });
+
+            if (existingNote) {
+                // Note exists, so we delete it.
+                const deleted = await Contribution.findByIdAndDelete(existingNote._id).lean();
+                if (deleted) {
+                    removedData = deleted.data;
+                }
+            } else {
+                // Note does not exist, so we create it.
+                const created = await Contribution.create({ projectId, userId, type, data });
+                newContribution = JSON.parse(JSON.stringify(created));
+            }
         } else {
-            // Default behavior: add a new contribution
+            // Default behavior for other canvas types: add a new contribution
             const created = await Contribution.create({ projectId, userId, type, data });
             newContribution = JSON.parse(JSON.stringify(created));
         }

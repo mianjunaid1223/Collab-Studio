@@ -20,10 +20,10 @@ const ROWS = 8;
 const PITCHES = [523.25, 493.88, 440.00, 392.00, 349.23, 329.63, 293.66, 261.63]; // C Major scale, high to low
 
 const waveformColors: Record<string, string> = {
-    sine: 'bg-chart-1',
-    square: 'bg-chart-4',
-    triangle: 'bg-chart-5',
-    sawtooth: 'bg-chart-2',
+    sine: 'bg-primary',
+    square: 'bg-chart-3',
+    triangle: 'bg-chart-4',
+    sawtooth: 'bg-destructive',
 };
 
 export function AudioVisualCanvas({ project, contributions, onContribute, user, activeWaveform, activeBPM }: CanvasProps) {
@@ -116,10 +116,8 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
 
     const handleCellClick = (col: number, row: number) => {
         if (!user) return;
-        const key = `${col},${row}`;
-        const noteExists = grid.has(key);
-        // If adding a note, pass the active waveform. If removing, it's not needed.
-        onContribute({ col, row, active: !noteExists, waveform: activeWaveform });
+        // This function now simply reports the click. The server will handle the toggle logic.
+        onContribute({ col, row, waveform: activeWaveform });
     };
 
     return (
