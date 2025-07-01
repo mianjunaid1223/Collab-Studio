@@ -9,9 +9,10 @@ interface CanvasProps {
   user: User | null;
   activeColor: string;
   activeSize: number;
+  activeBlur: number;
 }
 
-export function WatercolorCanvas({ project, contributions, onContribute, user, activeColor, activeSize }: CanvasProps) {
+export function WatercolorCanvas({ project, contributions, onContribute, user, activeColor, activeSize, activeBlur }: CanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const handleCanvasClick = (e: MouseEvent<HTMLDivElement>) => {
@@ -21,11 +22,11 @@ export function WatercolorCanvas({ project, contributions, onContribute, user, a
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
 
-    onContribute({ x, y, color: activeColor, size: activeSize });
+    onContribute({ x, y, color: activeColor, size: activeSize, blur: activeBlur });
   };
 
   return (
-    <div className="w-full h-full flex items-center justify-center bg-muted/20 p-4">
+    <div className="w-full h-full flex items-center justify-center">
       <div 
         ref={canvasRef}
         className="relative w-full h-full max-w-[90vh] max-h-[90vh] aspect-square bg-card shadow-2xl overflow-hidden cursor-pointer"
@@ -46,7 +47,7 @@ export function WatercolorCanvas({ project, contributions, onContribute, user, a
               height: `${c.data.size}%`,
               transform: 'translate(-50%, -50%)',
               background: `radial-gradient(circle, ${c.data.color}99 0%, ${c.data.color}00 70%)`,
-              filter: 'blur(8px)',
+              filter: `blur(${c.data.blur ?? 8}px)`,
             }}
           />
         ))}

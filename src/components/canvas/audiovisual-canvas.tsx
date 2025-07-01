@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Project, Contribution, User } from "@/lib/types";
 import { Button } from '@/components/ui/button';
 import { Play, Square as StopIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface CanvasProps {
   project: Project;
@@ -30,20 +31,23 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
     });
 
     const audioContextRef = useRef<AudioContext | null>(null);
+    const animationFrameId = useRef<number>();
     const schedulerTimerRef = useRef<NodeJS.Timeout | null>(null);
-    const visualTimerRef = useRef<NodeJS.Timeout | null>(null);
     const nextNoteTimeRef = useRef(0.0);
     const stepRef = useRef(0);
 
     const scheduleNotes = useCallback(() => {
         if (!audioContextRef.current) return;
-        while (nextNoteTimeRef.current < audioContextRef.current.currentTime + 0.1) {
+        const ac = audioContextRef.current;
+
+        while (nextNoteTimeRef.current < ac.currentTime + 0.1) {
+            const current_col = stepRef.current;
             for (let row = 0; row < ROWS; row++) {
-                if (grid.has(`${stepRef.current},${row}`)) {
-                    const osc = audioContextRef.current.createOscillator();
-                    const gainNode = audioContextRef.current.createGain();
+                if (grid.has(`${current_col},${row}`)) {
+                    const osc = ac.createOscillator();
+                    const gainNode = ac.createGain();
                     osc.connect(gainNode);
-                    gainNode.connect(audioContextRef.current.destination);
+                    gainNode.connect(ac.destination);
                     osc.type = activeWaveform;
                     osc.frequency.value = PITCHES[row];
                     gainNode.gain.setValueAtTime(0.3, nextNoteTimeRef.current);
@@ -58,17 +62,13 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
         schedulerTimerRef.current = setTimeout(scheduleNotes, 25.0);
     }, [grid, activeWaveform]);
     
-    const updateVisuals = useCallback(() => {
-       if (!audioContextRef.current || !isPlaying) return;
-       
-       const nextStepIndex = stepRef.current;
-       const currentTime = audioContextRef.current.currentTime;
-       const timeToNextNote = nextNoteTimeRef.current - currentTime - (COLS - nextStepIndex) * SECONDS_PER_STEP;
-       
-       const visualStep = (stepRef.current - 1 + COLS) % COLS;
-       setCurrentStep(visualStep);
-       
-       visualTimerRef.current = setTimeout(updateVisuals, SECONDS_PER_STEP * 1000);
+    const visualScheduler = useCallback(() => {
+        if (isPlaying && audioContextRef.current) {
+            const timeElapsed = audioContextRef.current.currentTime - (nextNoteTimeRef.current - (COLS + 1) * SECONDS_PER_STEP);
+            const step = Math.floor(timeElapsed / SECONDS_PER_STEP) % COLS;
+            setCurrentStep(step);
+        }
+        animationFrameId.current = requestAnimationFrame(visualScheduler);
     }, [isPlaying]);
 
 
@@ -76,7 +76,7 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
         if (isPlaying) {
             setIsPlaying(false);
             if(schedulerTimerRef.current) clearTimeout(schedulerTimerRef.current);
-            if(visualTimerRef.current) clearTimeout(visualTimerRef.current);
+            if(animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
             setCurrentStep(-1);
         } else {
             if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
@@ -87,14 +87,14 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
             stepRef.current = 0;
             nextNoteTimeRef.current = audioContextRef.current.currentTime + 0.1;
             scheduleNotes();
-            updateVisuals();
+            animationFrameId.current = requestAnimationFrame(visualScheduler);
         }
     };
     
     useEffect(() => {
         return () => {
             if (schedulerTimerRef.current) clearTimeout(schedulerTimerRef.current);
-            if (visualTimerRef.current) clearTimeout(visualTimerRef.current);
+            if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
             if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
               audioContextRef.current.close().catch(console.error);
             }
@@ -110,7 +110,7 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
     return (
         <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-muted/20 gap-4">
              <div 
-                className="grid bg-card border-2 border-border shadow-2xl"
+                className="grid bg-card border-2 border-border shadow-2xl relative overflow-hidden"
                 style={{
                     gridTemplateColumns: `repeat(${COLS}, 1fr)`,
                     gridTemplateRows: `repeat(${ROWS}, 1fr)`,
@@ -118,19 +118,33 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
                     aspectRatio: '16 / 8',
                 }}
             >
+                {isPlaying && currentStep >= 0 && (
+                    <div 
+                        className="absolute top-0 bottom-0 bg-accent/20 rounded-md transition-transform duration-100 ease-linear"
+                        style={{
+                            width: `${100/COLS}%`,
+                            transform: `translateX(${currentStep * 100}%)`,
+                            boxShadow: '0 0 15px 3px hsl(var(--accent))',
+                        }}
+                    />
+                )}
                 {Array.from({ length: COLS * ROWS }).map((_, i) => {
                     const col = i % COLS;
                     const row = Math.floor(i / COLS);
                     const isActive = grid.has(`${col},${row}`);
-                    const isPlayingStep = isPlaying && col === currentStep;
+                    const isPlayingNote = isPlaying && col === currentStep;
 
                     return (
                         <div
                             key={`${col}-${row}`}
-                            className={`w-full h-full border-r border-b border-muted/20 flex items-center justify-center transition-colors duration-100 ${user ? 'cursor-pointer' : ''} ${isPlayingStep ? 'bg-accent' : ''}`}
+                            className={`w-full h-full border-r border-b border-muted/20 flex items-center justify-center z-10 ${user ? 'cursor-pointer' : ''}`}
                             onClick={() => handleCellClick(col, row)}
                         >
-                            <div className={`w-3/4 h-3/4 rounded-sm transition-colors ${isActive ? 'bg-primary' : 'bg-muted hover:bg-muted-foreground/20'}`} />
+                            <div className={cn(
+                                'w-3/4 h-3/4 rounded-sm transition-all duration-200',
+                                isActive ? 'bg-primary' : 'bg-muted hover:bg-muted-foreground/20',
+                                isPlayingNote && isActive && 'animate-pulse bg-primary-foreground shadow-lg shadow-primary-foreground'
+                            )} />
                         </div>
                     );
                 })}

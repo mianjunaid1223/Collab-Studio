@@ -7,7 +7,7 @@ import { ColorPicker } from "./color-picker";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Waves, Circle, Square, Minus, Plus } from "lucide-react";
+import { Waves, Circle, Square, Minus, Plus, Blend } from "lucide-react";
 
 interface CanvasToolsProps {
   canvasType: CanvasType;
@@ -21,6 +21,8 @@ interface CanvasToolsProps {
   onWidthChange: (width: number) => void;
   activeWaveform: 'sine' | 'square' | 'triangle' | 'sawtooth';
   onWaveformChange: (waveform: 'sine' | 'square' | 'triangle' | 'sawtooth') => void;
+  activeBlur: number;
+  onBlurChange: (blur: number) => void;
 }
 
 export function CanvasTools({ 
@@ -29,7 +31,8 @@ export function CanvasTools({
     activeShape, onShapeChange,
     activeSize, onSizeChange,
     activeWidth, onWidthChange,
-    activeWaveform, onWaveformChange
+    activeWaveform, onWaveformChange,
+    activeBlur, onBlurChange
 }: CanvasToolsProps) {
     
     return (
@@ -75,6 +78,23 @@ export function CanvasTools({
                                     step={1}
                                 />
                                 <Plus className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Droplet Blur</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                           <div className="flex items-center gap-2">
+                                <Blend className="h-4 w-4 text-muted-foreground" />
+                                <Slider
+                                    value={[activeBlur]}
+                                    onValueChange={(v) => onBlurChange(v[0])}
+                                    min={0}
+                                    max={20}
+                                    step={1}
+                                />
                             </div>
                         </CardContent>
                     </Card>

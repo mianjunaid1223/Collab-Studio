@@ -16,6 +16,7 @@ interface CanvasSwitcherProps {
   activeSize: number;
   activeWidth: number;
   activeWaveform: 'sine' | 'square' | 'triangle' | 'sawtooth';
+  activeBlur: number;
 }
 
 export function CanvasSwitcher({ project, contributions, onContribute, user, ...toolProps }: CanvasSwitcherProps) {
@@ -47,6 +48,7 @@ export function CanvasSwitcher({ project, contributions, onContribute, user, ...
         user={user}
         activeColor={toolProps.activeColor}
         activeSize={toolProps.activeSize}
+        activeBlur={toolProps.activeBlur}
        />;
     case 'AudioVisual':
       return <AudioVisualCanvas 

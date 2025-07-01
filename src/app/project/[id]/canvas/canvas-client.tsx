@@ -23,6 +23,7 @@ export default function CanvasClient({ project, initialContributions }: { projec
   const [activeSize, setActiveSize] = useState(20);
   const [activeWidth, setActiveWidth] = useState(3);
   const [activeWaveform, setActiveWaveform] = useState<"sine" | "square" | "triangle" | "sawtooth">("sine");
+  const [activeBlur, setActiveBlur] = useState(8);
 
   useEffect(() => {
     setIsClient(true);
@@ -44,11 +45,7 @@ export default function CanvasClient({ project, initialContributions }: { projec
       });
 
       newSocket.on('contribution-broadcast', (newContribution: Contribution) => {
-        // We only add the contribution if it's from another user,
-        // as we've already added our own optimistically.
-        if (newContribution.userId !== user?.id) {
-          setContributions((prev) => [...prev, newContribution]);
-        }
+        setContributions((prev) => [...prev, newContribution]);
       });
       
       newSocket.on('contribution-error', (errorMessage: string) => {
@@ -57,13 +54,15 @@ export default function CanvasClient({ project, initialContributions }: { projec
           description: errorMessage,
           variant: "destructive",
         });
-        // A more robust implementation would roll back the optimistic update.
+        // A more robust implementation would roll back an optimistic update if we were using one.
       });
 
       newSocket.on('disconnect', () => {
         console.log('Disconnected from socket server.');
         setSocket(null);
       });
+
+      setSocket(newSocket);
     };
 
     initSocket();
@@ -73,7 +72,7 @@ export default function CanvasClient({ project, initialContributions }: { projec
     };
     // We don't include `socket` in the dependency array to prevent re-connecting on every state change.
     // The connection should persist for the lifetime of the component.
-  }, [project.id, user?.id, toast]);
+  }, [project.id, toast]);
 
 
   const handleContribute = useCallback(async (data: any) => {
@@ -85,7 +84,7 @@ export default function CanvasClient({ project, initialContributions }: { projec
         });
         return;
     }
-     if (!socket) {
+     if (!socket || !socket.connected) {
         toast({
             title: "Not Connected",
             description: "You are not connected to the live session. Please refresh.",
@@ -94,19 +93,7 @@ export default function CanvasClient({ project, initialContributions }: { projec
         return;
     }
     
-    // Optimistic update
-    const optimisticContribution: Contribution = {
-        id: new Date().toISOString(),
-        _id: new Date().toISOString() as any,
-        projectId: project._id,
-        userId: user.id,
-        type: project.canvasType,
-        data,
-        createdAt: new Date(),
-    };
-    setContributions(prev => [...prev, optimisticContribution]);
-
-    // Emit event to the server instead of calling a server action
+    // Emit event to the server. The server will save it and broadcast it back to all clients.
     socket.emit('new-contribution', {
       projectId: project.id,
       userId: user.id,
@@ -118,7 +105,7 @@ export default function CanvasClient({ project, initialContributions }: { projec
 
   return (
     <div className="flex flex-col lg:flex-row h-screen w-screen bg-background text-foreground">
-      <div className="flex-grow bg-muted/20 relative flex items-center justify-center overflow-hidden">
+      <div className="flex-grow bg-muted/20 relative flex items-center justify-center overflow-hidden p-4">
         {isClient ? (
           <CanvasSwitcher 
             project={project}
@@ -130,6 +117,7 @@ export default function CanvasClient({ project, initialContributions }: { projec
             activeSize={activeSize}
             activeWidth={activeWidth}
             activeWaveform={activeWaveform}
+            activeBlur={activeBlur}
           />
         ) : (
           <div className="flex flex-col items-center gap-4 text-muted-foreground">
@@ -170,6 +158,8 @@ export default function CanvasClient({ project, initialContributions }: { projec
              onWidthChange={setActiveWidth}
              activeWaveform={activeWaveform}
              onWaveformChange={setActiveWaveform}
+             activeBlur={activeBlur}
+             onBlurChange={setActiveBlur}
            />
         </div>
       </aside>
