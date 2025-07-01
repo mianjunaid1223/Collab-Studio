@@ -6,6 +6,10 @@ import { app } from '@/lib/firebase';
 import { getUserProfile, type User as AppUser } from '@/lib/firestore';
 import { Loader2 } from 'lucide-react';
 
+// Initialize Firebase Auth immediately when this client module is loaded.
+// This prevents race conditions where components try to use auth before it's ready.
+const auth: Auth | null = app ? getAuth(app) : null;
+
 type AuthContextType = {
   user: User | null;
   appUser: AppUser | null;
@@ -16,7 +20,7 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   appUser: null,
-  auth: null,
+  auth: auth, // Provide the initialized auth instance directly.
   loading: true,
 });
 
@@ -24,31 +28,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [appUser, setAppUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [auth, setAuth] = useState<Auth | null>(null);
 
   useEffect(() => {
-    if (app) {
-      const authInstance = getAuth(app);
-      setAuth(authInstance);
-      
-      const unsubscribe = onAuthStateChanged(authInstance, async (user) => {
-        setLoading(true);
-        setUser(user);
-        if (user) {
-          const profile = await getUserProfile(user.uid);
+    if (auth) {
+      const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+        setUser(currentUser);
+        if (currentUser) {
+          const profile = await getUserProfile(currentUser.uid);
           setAppUser(profile);
         } else {
           setAppUser(null);
         }
         setLoading(false);
       });
-
       return () => unsubscribe();
     } else {
+      // If firebase is not configured, stop loading and show the app.
       setLoading(false);
     }
   }, []);
 
+  const value = { user, appUser, auth, loading };
+
+  // While the initial user state is being determined, we can show a loader.
+  // This prevents a flash of unauthenticated content.
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen w-screen">
@@ -58,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, appUser, auth, loading }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
