@@ -111,12 +111,11 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
     return (
         <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-muted/20 gap-4">
              <div 
-                className="grid bg-card border-2 border-border shadow-2xl relative overflow-hidden"
+                className="grid bg-card border-2 border-border shadow-2xl relative overflow-hidden aspect-square"
                 style={{
                     gridTemplateColumns: `repeat(${COLS}, 1fr)`,
                     gridTemplateRows: `repeat(${ROWS}, 1fr)`,
-                    width: 'min(90vw, 80vh)',
-                    aspectRatio: '16 / 8',
+                    width: 'min(90vw, 90vh)',
                 }}
             >
                 {isPlaying && currentStep >= 0 && (

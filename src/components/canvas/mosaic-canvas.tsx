@@ -36,8 +36,7 @@ export function MosaicCanvas({ project, contributions, onContribute, user, activ
                 style={{
                     gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
                     gridTemplateRows: `repeat(${GRID_SIZE}, 1fr)`,
-                    width: '100%',
-                    maxWidth: 'min(90vw, 90vh)',
+                    width: 'min(90vw, 90vh)',
                 }}
             >
                 {Array.from({ length: GRID_SIZE * GRID_SIZE }).map((_, i) => {

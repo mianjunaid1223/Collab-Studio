@@ -29,9 +29,10 @@ export function WatercolorCanvas({ project, contributions, onContribute, user, a
     <div className="w-full h-full flex items-center justify-center">
       <div 
         ref={canvasRef}
-        className="relative w-full h-full max-w-[90vh] max-h-[90vh] aspect-square bg-card shadow-2xl overflow-hidden cursor-pointer"
+        className="relative aspect-square bg-card shadow-2xl overflow-hidden cursor-pointer"
         onClick={handleCanvasClick}
         style={{
+          width: 'min(90vw, 90vh)',
           backgroundImage: 'radial-gradient(hsl(var(--border)) 1px, transparent 0)',
           backgroundSize: '20px 20px',
         }}
