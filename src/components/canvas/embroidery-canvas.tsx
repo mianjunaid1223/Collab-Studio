@@ -63,7 +63,7 @@ export function EmbroideryCanvas({ project, contributions, onContribute, user, a
         <svg
             ref={svgRef}
             viewBox="0 0 800 800"
-            className="aspect-square w-full max-w-full bg-card shadow-2xl cursor-crosshair rounded-lg"
+            className="aspect-square max-w-full max-h-full bg-card shadow-2xl cursor-crosshair rounded-lg"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}

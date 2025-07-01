@@ -124,7 +124,7 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
     };
 
     return (
-        <div className="w-full flex flex-col items-center justify-center gap-4">
+        <div className="max-w-full max-h-full flex flex-col items-center justify-center gap-4">
              <div 
                 className="grid bg-card border-2 border-border shadow-2xl relative overflow-hidden w-full"
                 style={{
