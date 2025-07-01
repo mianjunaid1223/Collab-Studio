@@ -4,7 +4,7 @@ import type { Socket } from 'socket.io-client';
 import type { Project, Contribution, User } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Info, PanelLeft, Settings2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Info, PanelLeft, Settings2, X } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { CanvasSwitcher } from '@/components/canvas/canvas-switcher';
@@ -23,8 +23,8 @@ export default function CanvasClient({ project: initialProject, initialContribut
   const [socket, setSocket] = useState<Socket | null>(null);
   const isMobile = useIsMobile();
 
-  const [leftPanelOpen, setLeftPanelOpen] = useState(!isMobile);
-  const [rightPanelOpen, setRightPanelOpen] = useState(!isMobile);
+  const [leftPanelOpen, setLeftPanelOpen] = useState(false);
+  const [rightPanelOpen, setRightPanelOpen] = useState(false);
 
   // Tool state
   const [activeColor, setActiveColor] = useState('#64B5F6');
@@ -85,8 +85,13 @@ export default function CanvasClient({ project: initialProject, initialContribut
   }, [project.id, project.canvasType, toast]);
   
   useEffect(() => {
-    setLeftPanelOpen(!isMobile);
-    setRightPanelOpen(!isMobile);
+    if (!isMobile) {
+      setLeftPanelOpen(true);
+      setRightPanelOpen(true);
+    } else {
+      setLeftPanelOpen(false);
+      setRightPanelOpen(false);
+    }
   }, [isMobile]);
 
   const handleContribute = useCallback(async (data: any) => {
@@ -109,24 +114,27 @@ export default function CanvasClient({ project: initialProject, initialContribut
   }, [project.id, project.canvasType, user, toast, socket]);
 
   return (
-    <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden">
+    <div className="h-screen w-screen overflow-hidden flex bg-background text-foreground">
       
       {/* Left Panel */}
       <aside className={cn(
-          "h-full w-80 flex-shrink-0 border-r bg-card flex flex-col transition-transform duration-300 ease-in-out",
-          "absolute lg:relative z-20",
-          leftPanelOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        )}>
-        <div className={cn(
-          "p-4 space-y-6 h-full flex flex-col overflow-y-auto transition-opacity",
-           !leftPanelOpen && "lg:opacity-0"
-           )}>
-            <Button asChild variant="outline" className="w-full">
-                <Link href={`/project/${project.id}`}>
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Project Details
-                </Link>
-            </Button>
+        "bg-card border-r flex flex-col transition-transform duration-300 ease-in-out",
+        "fixed lg:relative inset-y-0 left-0 z-30 w-80",
+        leftPanelOpen ? 'translate-x-0' : '-translate-x-full',
+        "lg:translate-x-0"
+      )}>
+        <div className="p-4 space-y-6 h-full flex flex-col overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <Button asChild variant="outline" className="w-fit">
+                  <Link href={`/project/${project.id}`}>
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back to Project
+                  </Link>
+              </Button>
+               <Button size="icon" variant="ghost" onClick={() => setLeftPanelOpen(false)} className="lg:hidden">
+                  <X className="h-5 w-5" />
+               </Button>
+            </div>
             <div className="space-y-1">
               <h1 className="text-2xl font-bold font-headline">{project.title}</h1>
               <div className="flex items-center text-sm text-muted-foreground pt-1">
@@ -143,36 +151,28 @@ export default function CanvasClient({ project: initialProject, initialContribut
             </div>
             <ProjectStatus project={project} />
         </div>
-        <style jsx>{`
-          aside {
-            width: ${leftPanelOpen ? '20rem' : '0'};
-            border-width: ${leftPanelOpen ? '0 1px 0 0' : '0'};
-            padding: ${leftPanelOpen ? '1rem' : '0'};
-          }
-          @media (max-width: 1023px) {
-            aside {
-                width: 20rem;
-                padding: 1rem;
-            }
-          }
-        `}</style>
       </aside>
       
-      {/* Center Area */}
+       {isMobile && (leftPanelOpen || rightPanelOpen) && (
+        <div 
+          className="fixed inset-0 z-20 bg-black/60 lg:hidden"
+          onClick={() => { setLeftPanelOpen(false); setRightPanelOpen(false); }}
+        />
+      )}
+      
+      {/* Center Area (Main Content) */}
       <div className="flex-1 flex flex-col min-w-0">
-          {/* Header with Toggles */}
           <header className="flex h-14 flex-shrink-0 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm">
-              <Button size="icon" variant="ghost" onClick={() => setLeftPanelOpen(!leftPanelOpen)}>
+              <Button size="icon" variant="ghost" onClick={() => setLeftPanelOpen(true)} className="lg:hidden">
                   <PanelLeft />
               </Button>
               <div className="flex-grow" /> {/* Spacer */}
-              <Button size="icon" variant="ghost" onClick={() => setRightPanelOpen(!rightPanelOpen)}>
+              <Button size="icon" variant="ghost" onClick={() => setRightPanelOpen(true)} className="lg:hidden">
                   <Settings2 />
               </Button>
           </header>
 
-          {/* Canvas */}
-          <main className="flex-grow bg-muted/30 relative flex items-center justify-center overflow-hidden p-4">
+          <main className="flex-grow bg-muted/30 relative flex items-center justify-center overflow-auto p-4">
             {isClient ? (
               <CanvasSwitcher 
                 project={project}
@@ -198,15 +198,18 @@ export default function CanvasClient({ project: initialProject, initialContribut
 
        {/* Right Panel */}
        <aside className={cn(
-        "h-full w-80 flex-shrink-0 border-l bg-card flex flex-col transition-transform duration-300 ease-in-out",
-        "absolute lg:relative right-0 top-0 z-20",
-        rightPanelOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
+        "bg-card border-l flex flex-col transition-transform duration-300 ease-in-out",
+        "fixed lg:relative inset-y-0 right-0 z-30 w-80",
+        rightPanelOpen ? 'translate-x-0' : 'translate-x-full',
+        "lg:translate-x-0"
         )}>
-           <div className={cn(
-            "p-4 space-y-6 h-full flex flex-col overflow-y-auto transition-opacity",
-            !rightPanelOpen && "lg:opacity-0"
-           )}>
-              <h2 className="text-2xl font-bold font-headline">Tools</h2>
+           <div className="p-4 space-y-6 h-full flex flex-col overflow-y-auto">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold font-headline">Tools</h2>
+                <Button size="icon" variant="ghost" onClick={() => setRightPanelOpen(false)} className="lg:hidden">
+                    <X className="h-5 w-5" />
+                </Button>
+              </div>
                <CanvasTools
                  canvasType={project.canvasType}
                  activeColor={activeColor}
@@ -225,19 +228,6 @@ export default function CanvasClient({ project: initialProject, initialContribut
                  onBPMChange={setActiveBPM}
                />
             </div>
-            <style jsx>{`
-              aside {
-                width: ${rightPanelOpen ? '20rem' : '0'};
-                border-width: ${rightPanelOpen ? '0 0 0 1px' : '0'};
-                padding: ${rightPanelOpen ? '1rem' : '0'};
-              }
-              @media (max-width: 1023px) {
-                aside {
-                    width: 20rem;
-                    padding: 1rem;
-                }
-              }
-            `}</style>
       </aside>
     </div>
   );
