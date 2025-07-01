@@ -8,7 +8,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Waves, Circle, Square, Minus, Plus } from "lucide-react";
-import { FormControl } from "@/components/ui/form";
 
 interface CanvasToolsProps {
   canvasType: CanvasType;
@@ -114,14 +113,12 @@ export function CanvasTools({
                     </CardHeader>
                     <CardContent>
                          <Select onValueChange={onWaveformChange} defaultValue={activeWaveform}>
-                            <FormControl>
                             <SelectTrigger>
                                 <div className="flex items-center gap-2">
                                 <Waves className="h-4 w-4" />
                                 <SelectValue placeholder="Select a sound wave" />
                                 </div>
                             </SelectTrigger>
-                            </FormControl>
                             <SelectContent>
                                 <SelectItem value="sine">Sine (Smooth)</SelectItem>
                                 <SelectItem value="square">Square (Buzzy)</SelectItem>
