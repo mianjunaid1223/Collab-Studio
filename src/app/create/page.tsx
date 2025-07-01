@@ -22,7 +22,7 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useAuth } from '@/context/auth-context';
-import { createProject, getUserProfile } from '@/lib/firestore';
+import { createProject } from '@/app/(auth)/actions';
 
 const createProjectSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters long." }),
@@ -59,42 +59,19 @@ export default function CreateProjectPage() {
   }
 
   async function onSubmit(values: CreateProjectValues) {
-    if (!user) {
-      toast({
-        title: "Not Authenticated",
-        description: "You must be logged in to create a project.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     startTransition(async () => {
-      try {
-        const userProfile = await getUserProfile(user.uid);
-        if (!userProfile) {
-          throw new Error('User profile not found. Please try logging in again.');
-        }
+      const result = await createProject(values);
 
-        const newProjectData = {
-          ...values,
-          createdBy: user.uid,
-          creatorName: userProfile.name,
-          creatorAvatar: userProfile.avatar,
-        };
-
-        const newProjectId = await createProject(newProjectData);
-        
+      if (result.success && result.projectId) {
         toast({
           title: "Project Created!",
           description: "Your new canvas is ready for collaboration.",
         });
-        
-        router.push(`/project/${newProjectId}`);
-
-      } catch (error: any) {
+        router.push(`/project/${result.projectId}`);
+      } else {
         toast({
           title: "Error Creating Project",
-          description: error.message || "Failed to create project. Please try again.",
+          description: result.error || "Failed to create project. Please try again.",
           variant: "destructive",
         });
       }

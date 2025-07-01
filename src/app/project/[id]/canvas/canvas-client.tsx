@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, RefreshCw, Loader2, Info } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
-import { streamProjectPixels, placePixel } from '@/lib/firestore';
+import { placePixel, getProjectPixels } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 
-export default function CanvasClient({ project }: { project: Project }) {
+export default function CanvasClient({ project, initialPixels }: { project: Project, initialPixels: Map<string, string> }) {
   const [selectedColor, setSelectedColor] = useState('#000000');
-  const [pixels, setPixels] = useState<Map<string, string>>(new Map());
+  const [pixels, setPixels] = useState<Map<string, string>>(initialPixels);
   const canvasHandleRef = useRef<PixelCanvasHandle>(null);
   const [isClient, setIsClient] = useState(false);
   const { user } = useAuth();
@@ -20,11 +20,15 @@ export default function CanvasClient({ project }: { project: Project }) {
 
   useEffect(() => {
     setIsClient(true);
-    const unsubscribe = streamProjectPixels(project.id, (newPixels) => {
+    // Note: To make this truly real-time, a WebSocket or server-sent events
+    // implementation would be needed to push pixel updates from the server.
+    // For now, we'll fetch pixels periodically as a simple polling mechanism.
+    const interval = setInterval(async () => {
+        const newPixels = await getProjectPixels(project.id);
         setPixels(newPixels);
-    });
+    }, 5000); // Poll every 5 seconds
 
-    return () => unsubscribe();
+    return () => clearInterval(interval);
   }, [project.id]);
 
   const handleResetView = () => {
@@ -40,8 +44,23 @@ export default function CanvasClient({ project }: { project: Project }) {
         });
         return;
     }
+    
+    // Optimistically update the UI
+    const newPixels = new Map(pixels);
+    newPixels.set(`${x},${y}`, color);
+    setPixels(newPixels);
+
     try {
-        await placePixel(project.id, user.uid, x, y, color);
+        const result = await placePixel(project.id, user.id, x, y, color);
+        if (result.error) {
+            // Revert optimistic update on error
+            toast({
+                title: "Error Placing Pixel",
+                description: result.error,
+                variant: "destructive",
+            });
+            setPixels(pixels); // Revert to original state
+        }
     } catch (error) {
         console.error("Failed to place pixel:", error);
         toast({
@@ -49,8 +68,9 @@ export default function CanvasClient({ project }: { project: Project }) {
             description: "Could not place pixel. Please try again.",
             variant: "destructive",
         });
+        setPixels(pixels); // Revert to original state
     }
-  }, [project.id, user, toast]);
+  }, [project.id, user, toast, pixels]);
 
   return (
     <div className="flex flex-col lg:flex-row h-screen w-screen bg-background text-foreground">

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Palette, Users, MousePointerClick } from "lucide-react";
 import { ProjectCard } from "@/components/project/project-card";
-import { getCompletedProjects } from "@/lib/firestore";
+import { getCompletedProjects } from "@/lib/data";
 import type { Project } from "@/lib/types";
 
 export default async function Home() {
@@ -111,6 +111,7 @@ export default async function Home() {
             {completedProjects.map(project => (
               <ProjectCard key={project.id} project={project} />
             ))}
+            {completedProjects.length === 0 && <p className="text-muted-foreground col-span-full text-center py-8">No masterpieces have been completed yet.</p>}
           </div>
         </div>
       </section>

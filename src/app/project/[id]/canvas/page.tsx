@@ -1,4 +1,4 @@
-import { getProjectById } from '@/lib/firestore';
+import { getProjectById, getProjectPixels } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import CanvasClient from './canvas-client';
 
@@ -11,5 +11,7 @@ export default async function CanvasPage({ params }: { params: { id: string } })
     notFound();
   }
 
-  return <CanvasClient project={project} />;
+  const initialPixels = await getProjectPixels(project.id);
+
+  return <CanvasClient project={project} initialPixels={initialPixels} />;
 }

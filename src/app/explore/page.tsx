@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProjectCard } from "@/components/project/project-card";
-import { getProjects } from "@/lib/firestore";
+import { getProjects } from "@/lib/data";
 import type { Project } from "@/lib/types";
 import { Search } from "lucide-react";
 

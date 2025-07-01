@@ -24,16 +24,16 @@ const navLinks = [
 
 export function Header() {
   const [isSheetOpen, setSheetOpen] = useState(false);
-  const { user, appUser, loading, signOut } = useAuth();
+  const { user, loading, logout } = useAuth();
   const router = useRouter();
 
   const handleSignOut = async () => {
     try {
-      await signOut();
+      await logout();
       router.push('/');
+      router.refresh();
     } catch (error) {
       console.error("Sign out error:", error);
-      // Optionally, show a toast to the user
     }
   };
 
@@ -96,7 +96,7 @@ export function Header() {
         <div className="flex flex-1 items-center justify-end space-x-2">
           {!loading && (
             <>
-              {user && appUser ? (
+              {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -104,23 +104,23 @@ export function Header() {
                       className="relative h-10 w-10 rounded-full"
                     >
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={appUser.avatar} alt={appUser.name} />
-                        <AvatarFallback>{appUser.name.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={user.avatar} alt={user.name} />
+                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{appUser.name}</p>
+                        <p className="text-sm font-medium leading-none">{user.name}</p>
                         <p className="text-xs leading-none text-muted-foreground">
-                          {appUser.email}
+                          {user.email}
                         </p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href={`/profile/${user.uid}`}>Profile</Link>
+                      <Link href={`/profile/${user.id}`}>Profile</Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>

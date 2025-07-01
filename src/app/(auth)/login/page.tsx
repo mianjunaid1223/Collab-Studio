@@ -4,11 +4,8 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from "next/navigation";
-
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,10 +17,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { handleGoogleUser } from "../actions";
+import { login } from "../actions";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
@@ -36,7 +32,8 @@ export default function LoginPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const { auth } = useAuth();
+  const { refetchUser } = useAuth();
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -47,53 +44,19 @@ export default function LoginPage() {
   });
 
   const onSubmit = (values: LoginValues) => {
-    if (!auth) {
-      toast({ title: "Login Failed", description: "Firebase not configured.", variant: "destructive" });
-      return;
-    }
+    setError(null);
     startTransition(async () => {
-      try {
-        await signInWithEmailAndPassword(auth, values.email, values.password);
+      const result = await login(values);
+      if (result.success) {
         toast({ title: "Login Successful", description: "Welcome back!" });
+        refetchUser(); // Update auth context
         router.push("/explore");
-      } catch (error: any) {
-        const errorMessage = error.code ? error.code.replace('auth/', '').replace(/-/g, ' ') : error.message;
-        toast({ title: "Login Failed", description: errorMessage, variant: "destructive" });
+        router.refresh(); // Ensure header updates
+      } else {
+        setError(result.error || "An unexpected error occurred.");
       }
     });
   };
-
-  const handleGoogleLogin = () => {
-    if (!auth) {
-      toast({ title: "Login Failed", description: "Firebase not configured.", variant: "destructive" });
-      return;
-    }
-    startTransition(async () => {
-      const provider = new GoogleAuthProvider();
-      try {
-        const result = await signInWithPopup(auth, provider);
-        const { user } = result;
-
-        const dbResult = await handleGoogleUser({
-            uid: user.uid,
-            displayName: user.displayName,
-            email: user.email,
-            photoURL: user.photoURL
-        });
-
-        if (dbResult.error) {
-            throw new Error(dbResult.error);
-        }
-
-        toast({ title: "Login Successful", description: "Welcome!" });
-        router.push("/explore");
-
-      } catch (error: any) {
-        const errorMessage = error.code ? error.code.replace('auth/', '').replace(/-/g, ' ') : error.message;
-        toast({ title: "Google Login Failed", description: errorMessage, variant: "destructive" });
-      }
-    });
-  }
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] py-12">
@@ -138,15 +101,13 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
+              {error && <p className="text-sm font-medium text-destructive">{error}</p>}
               <Button type="submit" className="w-full" disabled={isPending}>
                 {isPending && <Loader2 className="animate-spin" />}
                 Login
               </Button>
             </form>
           </Form>
-           <Button variant="outline" className="w-full mt-4" onClick={handleGoogleLogin} disabled={isPending}>
-              {isPending ? <Loader2 className="animate-spin" /> : 'Continue with Google'}
-          </Button>
           <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{" "}
             <Link href="/signup" className="underline">

@@ -3,11 +3,8 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from "next/navigation";
-
-import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,10 +16,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { createUserInDb, handleGoogleUser } from "../actions";
+import { signup } from "../actions";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-
 
 const signupSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters.").max(20, "Username must be less than 20 characters."),
@@ -36,7 +32,8 @@ export default function SignupPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const { auth } = useAuth();
+  const { refetchUser } = useAuth();
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<SignupValues>({
     resolver: zodResolver(signupSchema),
@@ -48,67 +45,19 @@ export default function SignupPage() {
   });
 
   const onSubmit = (values: SignupValues) => {
-    if (!auth) {
-      toast({ title: "Sign Up Failed", description: "Firebase not configured.", variant: "destructive" });
-      return;
-    }
+    setError(null);
     startTransition(async () => {
-      try {
-        const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-        const { user } = userCredential;
-
-        const result = await createUserInDb({
-          userId: user.uid,
-          username: values.username,
-          email: values.email,
-        });
-
-        if (result.error) {
-          throw new Error(result.error);
+        const result = await signup(values);
+        if (result.success) {
+            toast({ title: "Account Created!", description: "Welcome! You are now logged in." });
+            refetchUser(); // Update auth context
+            router.push("/explore");
+            router.refresh(); // Ensure header updates
+        } else {
+            setError(result.error || "An unexpected error occurred.");
         }
-
-        toast({ title: "Account Created!", description: "Welcome! You are now logged in." });
-        router.push("/explore");
-
-      } catch (error: any) {
-        const errorMessage = error.code ? error.code.replace('auth/', '').replace(/-/g, ' ') : error.message;
-        toast({ title: "Sign Up Failed", description: errorMessage, variant: "destructive" });
-      }
     });
   };
-
-  const handleGoogleLogin = () => {
-    if (!auth) {
-      toast({ title: "Sign Up Failed", description: "Firebase not configured.", variant: "destructive" });
-      return;
-    }
-    startTransition(async () => {
-      const provider = new GoogleAuthProvider();
-      try {
-        const result = await signInWithPopup(auth, provider);
-        const { user } = result;
-        
-        const dbResult = await handleGoogleUser({
-            uid: user.uid,
-            displayName: user.displayName,
-            email: user.email,
-            photoURL: user.photoURL
-        });
-
-        if (dbResult.error) {
-            throw new Error(dbResult.error);
-        }
-        
-        toast({ title: "Account Created!", description: "Welcome!" });
-        router.push("/explore");
-
-      } catch (error: any) {
-        const errorMessage = error.code ? error.code.replace('auth/', '').replace(/-/g, ' ') : error.message;
-        toast({ title: "Google Sign Up Failed", description: errorMessage, variant: "destructive" });
-      }
-    });
-  }
-
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] py-12">
@@ -161,15 +110,13 @@ export default function SignupPage() {
                   </FormItem>
                 )}
               />
+              {error && <p className="text-sm font-medium text-destructive">{error}</p>}
               <Button type="submit" className="w-full" disabled={isPending}>
                 {isPending && <Loader2 className="animate-spin" />}
                 Create an account
               </Button>
             </form>
           </Form>
-          <Button variant="outline" className="w-full mt-4" onClick={handleGoogleLogin} disabled={isPending}>
-             {isPending ? <Loader2 className="animate-spin" /> : 'Sign up with Google'}
-          </Button>
           <div className="mt-4 text-center text-sm">
             Already have an account?{" "}
             <Link href="/login" className="underline">

@@ -1,10 +1,11 @@
-import { getUserProfile, getProjects } from '@/lib/firestore';
+import { getUserProfile, getProjects } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProjectCard } from '@/components/project/project-card';
 import { Flame, Droplets } from 'lucide-react';
+import type { Project } from '@/lib/types';
 
 export default async function ProfilePage({ params }: { params: { userId: string } }) {
   const user = await getUserProfile(params.userId);
@@ -13,10 +14,11 @@ export default async function ProfilePage({ params }: { params: { userId: string
     notFound();
   }
 
-  const allProjects = await getProjects();
   // TODO: A real implementation would query for projects created by or contributed to by the user.
-  const createdProjects = allProjects.filter(p => p.createdBy === user.id);
-  const contributedProjects = []; // This requires more complex data modeling to track contributions per user.
+  // This requires more advanced data aggregation.
+  const allProjects: Project[] = await getProjects();
+  const createdProjects = allProjects.filter(p => p.createdBy.toString() === user.id);
+  const contributedProjects: Project[] = []; // This requires more complex data modeling to track contributions per user.
 
   return (
     <div className="container mx-auto px-4 py-8">

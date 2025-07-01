@@ -1,22 +1,24 @@
-// In a real application, these functions would interact with a database like Firestore.
+import type { Types } from 'mongoose';
 
 export type Project = {
+  _id: Types.ObjectId;
   id: string;
   title: string;
   description: string;
   width: number;
   height: number;
-  createdBy: string; // This will be a user ID
+  createdBy: Types.ObjectId;
   creatorName: string;
   creatorAvatar: string;
   status: 'Active' | 'Completed' | 'Archived';
-  completionPercentage: number; // This would be calculated based on pixels placed
+  completionPercentage: number;
   contributorCount: number;
   theme: string;
-  createdAt: any; // Firestore timestamp
+  createdAt: Date;
 };
 
 export type User = {
+  _id: Types.ObjectId;
   id: string;
   name: string;
   email: string;
@@ -29,5 +31,6 @@ export type Pixel = {
   x: number;
   y: number;
   color: string;
-  userId: string;
+  userId: Types.ObjectId;
+  projectId: Types.ObjectId;
 };

@@ -1,50 +1,149 @@
 'use server';
 
 import { z } from 'zod';
-import { createUserProfile, getUserProfile } from '@/lib/firestore';
+import { cookies } from 'next/headers';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import dbConnect, { User, Project } from '@/lib/mongodb';
+import type { User as UserType } from '@/lib/types';
+import { revalidatePath } from 'next/cache';
 
-const FIREBASE_NOT_CONFIGURED_ERROR = "Firebase is not configured. Please check your environment variables.";
+const JWT_SECRET = process.env.JWT_SECRET;
+const COOKIE_NAME = 'session';
 
-export async function handleGoogleUser(user: { uid: string; displayName: string | null; email: string | null; photoURL: string | null; }) {
+if (!JWT_SECRET) {
+  throw new Error('Please define the JWT_SECRET environment variable');
+}
+
+// --- Auth Schemas ---
+
+const signupSchema = z.object({
+  username: z.string().min(3).max(20),
+  email: z.string().email(),
+  password: z.string().min(6),
+});
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string(),
+});
+
+// --- Auth Actions ---
+
+export async function signup(values: z.infer<typeof signupSchema>) {
   try {
-    const userProfile = await getUserProfile(user.uid);
-    if (!userProfile) {
-      if (!user.email) {
-          throw new Error("Google user email is not available.");
-      }
-      await createUserProfile(user.uid, {
-        name: user.displayName || 'Google User',
-        email: user.email,
-        avatar: user.photoURL || 'https://placehold.co/100x100.png',
-      });
+    await dbConnect();
+
+    const existingUser = await User.findOne({ email: values.email });
+    if (existingUser) {
+      return { error: 'An account with this email already exists.' };
     }
+
+    const hashedPassword = await bcrypt.hash(values.password, 10);
+    
+    const newUser = new User({
+      name: values.username,
+      email: values.email,
+      password: hashedPassword,
+      avatar: `https://placehold.co/100x100.png?text=${values.username.charAt(0)}`,
+    });
+
+    await newUser.save();
+    
+    await createAndSetSession(newUser._id.toString());
+    
     return { success: true };
-  } catch (error: any) {
-    if (error.message === FIREBASE_NOT_CONFIGURED_ERROR) {
-      return { error: FIREBASE_NOT_CONFIGURED_ERROR };
-    }
-    return { error: error.message };
+
+  } catch (error) {
+    console.error(error);
+    return { error: 'An unexpected error occurred. Please try again.' };
   }
 }
 
-const createUserSchema = z.object({
-  username: z.string().min(3).max(20),
-  email: z.string().email(),
-  userId: z.string()
+export async function login(values: z.infer<typeof loginSchema>) {
+    try {
+        await dbConnect();
+
+        const user = await User.findOne({ email: values.email });
+        if (!user) {
+            return { error: 'Invalid email or password.' };
+        }
+
+        const isPasswordValid = await bcrypt.compare(values.password, user.password);
+        if (!isPasswordValid) {
+            return { error: 'Invalid email or password.' };
+        }
+
+        await createAndSetSession(user._id.toString());
+        
+        return { success: true };
+
+    } catch (error) {
+        console.error(error);
+        return { error: 'An unexpected error occurred. Please try again.' };
+    }
+}
+
+export async function logoutAction() {
+    cookies().set(COOKIE_NAME, '', { expires: new Date(0) });
+}
+
+// --- Session Management ---
+async function createAndSetSession(userId: string) {
+    const token = jwt.sign({ userId }, JWT_SECRET!, { expiresIn: '7d' });
+    cookies().set(COOKIE_NAME, token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24 * 7, // 1 week
+        path: '/',
+    });
+}
+
+export async function getCurrentUser(): Promise<UserType | null> {
+    const token = cookies().get(COOKIE_NAME)?.value;
+    if (!token) return null;
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET!) as { userId: string };
+        await dbConnect();
+        const user = await User.findById(decoded.userId).select('-password');
+        return user ? JSON.parse(JSON.stringify(user)) : null;
+    } catch (error) {
+        return null;
+    }
+}
+
+// --- Data Actions ---
+
+const createProjectSchema = z.object({
+    title: z.string().min(3),
+    description: z.string().min(10),
+    width: z.coerce.number().int().min(16).max(256),
+    height: z.coerce.number().int().min(16).max(256),
+    theme: z.string().min(1),
 });
 
-export async function createUserInDb(values: z.infer<typeof createUserSchema>) {
-  try {
-    await createUserProfile(values.userId, {
-      name: values.username,
-      email: values.email,
-      avatar: 'https://placehold.co/100x100.png',
-    });
-    return { success: true };
-  } catch (error: any) {
-    if (error.message === FIREBASE_NOT_CONFIGURED_ERROR) {
-      return { error: FIREBASE_NOT_CONFIGURED_ERROR };
+export async function createProject(values: z.infer<typeof createProjectSchema>) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return { error: "You must be logged in to create a project." };
     }
-    return { error: error.message };
-  }
+
+    try {
+        await dbConnect();
+        const newProject = new Project({
+            ...values,
+            createdBy: user.id,
+            creatorName: user.name,
+            creatorAvatar: user.avatar,
+            contributorCount: 1, // Start with creator as first contributor
+        });
+
+        await newProject.save();
+        revalidatePath('/explore');
+        return { success: true, projectId: newProject._id.toString() };
+    } catch (error) {
+        console.error(error);
+        return { error: 'Failed to create project.' };
+    }
 }

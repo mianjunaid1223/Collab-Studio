@@ -1,4 +1,4 @@
-import { getProjectById, getContributors } from '@/lib/firestore';
+import { getProjectById, getContributors } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +15,6 @@ export default async function ProjectPage({ params }: { params: { id: string } }
     notFound();
   }
 
-  // Note: Contributor fetching is simplified. A production app might use a more efficient method.
   const contributors = await getContributors(project.id);
 
   return (
@@ -76,7 +75,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Users className="mr-2 h-5 w-5" />
-                Contributors ({project.contributorCount})
+                Contributors ({contributors.length})
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 max-h-96 overflow-y-auto">
