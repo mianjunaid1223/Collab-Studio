@@ -1,7 +1,7 @@
 'use server';
 
-import dbConnect, { Project, User, Pixel } from './mongodb';
-import type { Project as ProjectType, User as UserType } from './types';
+import dbConnect, { Project, User, Contribution } from './mongodb';
+import type { Project as ProjectType, User as UserType, Contribution as ContributionType, CanvasType } from './types';
 import { unstable_noStore as noStore, revalidatePath } from 'next/cache';
 
 export async function getProjects(count?: number): Promise<ProjectType[]> {
@@ -75,52 +75,41 @@ export async function getUserProfile(userId: string): Promise<UserType | null> {
     }
 }
 
-// --- Pixel Functions ---
+// --- Contribution Functions ---
 
-export async function getProjectPixels(projectId: string): Promise<Map<string, string>> {
+export async function getProjectContributions(projectId: string): Promise<ContributionType[]> {
     noStore();
     try {
         const conn = await dbConnect();
         if (!conn) {
-            console.warn(`Database not connected. Returning empty map for getProjectPixels(${projectId}).`);
-            return new Map();
+            console.warn(`Database not connected. Returning empty array for getProjectContributions(${projectId}).`);
+            return [];
         }
-        const pixels = await Pixel.find({ projectId }).exec();
-        const pixelMap = new Map<string, string>();
-        pixels.forEach(p => {
-            pixelMap.set(`${p.x},${p.y}`, p.color);
-        });
-        return pixelMap;
+        const contributions = await Contribution.find({ projectId }).sort({ createdAt: 'asc' }).exec();
+        return JSON.parse(JSON.stringify(contributions));
     } catch (error) {
-        console.error(`Failed to fetch pixels for project ${projectId}:`, error);
-        return new Map();
+        console.error(`Failed to fetch contributions for project ${projectId}:`, error);
+        return [];
     }
 }
 
-export async function placePixel(projectId: string, userId: string, x: number, y: number, color: string) {
+export async function addContribution(projectId: string, userId: string, type: CanvasType, data: any) {
     try {
         const conn = await dbConnect();
         if (!conn) {
-            return { error: 'Database is not configured. Pixel cannot be placed.' };
+            return { error: 'Database is not configured. Contribution cannot be saved.' };
         }
         
-        await Pixel.findOneAndUpdate(
-            { projectId, x, y },
-            { userId, color },
-            { upsert: true, new: true, setDefaultsOnInsert: true }
-        ).exec();
+        await Contribution.create({ projectId, userId, type, data });
         
         // In a real app, you would also update contributor counts and user stats here,
         // possibly in a transaction or a background job for better performance and consistency.
-        // For example:
-        // await Project.findByIdAndUpdate(projectId, { $inc: { completionPercentage: 0.01 } });
-        // await User.findByIdAndUpdate(userId, { $inc: { totalContributions: 1 } });
         
         revalidatePath(`/project/${projectId}/canvas`);
         return { success: true };
     } catch (error) {
-        console.error('Failed to place pixel:', error);
-        return { error: "Could not place pixel. Please try again." };
+        console.error('Failed to add contribution:', error);
+        return { error: "Could not save contribution. Please try again." };
     }
 }
 
@@ -133,12 +122,12 @@ export async function getContributors(projectId: string): Promise<UserType[]> {
             return [];
         }
         
-        // This implementation can be slow and expensive on projects with many pixels.
+        // This implementation can be slow and expensive on projects with many contributions.
         // A better approach for production would be to maintain a 'contributors' array on the Project model.
-        const distinctUserIds = await Pixel.find({ projectId }).distinct('userId').exec();
+        const distinctUserIds = await Contribution.find({ projectId }).distinct('userId').exec();
 
         if (!distinctUserIds || distinctUserIds.length === 0) {
-            // If no pixels, the creator is the only contributor
+            // If no contributions, the creator is the only contributor
             const project = await Project.findById(projectId).select('createdBy').exec();
             if(!project) return [];
             const creator = await User.findById(project.createdBy).select('-password').exec();

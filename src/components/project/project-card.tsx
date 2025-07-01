@@ -8,10 +8,18 @@ import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Project } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Users } from 'lucide-react';
+import { Users, Shapes, Droplets, Type, Music } from 'lucide-react';
 
 type ProjectCardProps = {
   project: Project;
+};
+
+const canvasModeDetails: Record<Project['canvasType'], { icon: React.ReactNode, hint: string }> = {
+  Embroidery: { icon: '🪡', hint: 'embroidery thread' },
+  Mosaic: { icon: <Shapes className="h-4 w-4" />, hint: 'mosaic tiles' },
+  Watercolor: { icon: <Droplets className="h-4 w-4" />, hint: 'watercolor paint' },
+  Typographic: { icon: <Type className="h-4 w-4" />, hint: 'letter art' },
+  AudioVisual: { icon: <Music className="h-4 w-4" />, hint: 'sound wave' },
 };
 
 export function ProjectCard({ project }: ProjectCardProps) {
@@ -26,6 +34,8 @@ export function ProjectCard({ project }: ProjectCardProps) {
     }
   };
 
+  const modeDetails = canvasModeDetails[project.canvasType];
+
   return (
     <Link href={`/project/${project.id}`}>
       <Card className="w-full h-full flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
@@ -34,8 +44,8 @@ export function ProjectCard({ project }: ProjectCardProps) {
             className="aspect-video w-full rounded-md bg-muted overflow-hidden flex items-center justify-center"
           >
              <Image 
-                src={`https://placehold.co/400x225/cccccc/333333.png?text=${project.width}x${project.height}`}
-                data-ai-hint="pixel art"
+                src={`https://placehold.co/400x225/e3f2fd/64b5f6.png?text=${encodeURIComponent(project.title)}`}
+                data-ai-hint={modeDetails.hint}
                 width={400} 
                 height={225} 
                 alt={project.title} 
@@ -65,7 +75,10 @@ export function ProjectCard({ project }: ProjectCardProps) {
         </CardContent>
         <CardFooter className="flex justify-between text-sm text-muted-foreground border-t pt-4">
            <div className="flex items-center">
-             <Badge variant="secondary">{project.theme}</Badge>
+             <Badge variant="secondary" className="flex items-center gap-1.5">
+                {modeDetails.icon}
+                {project.canvasType}
+            </Badge>
            </div>
            <div className="flex items-center">
              <Users className="h-4 w-4 mr-1.5" />

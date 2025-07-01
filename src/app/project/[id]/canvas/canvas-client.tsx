@@ -1,19 +1,16 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import PixelCanvas, { type PixelCanvasHandle } from '@/components/canvas/pixel-canvas';
-import { ColorPicker } from '@/components/canvas/color-picker';
-import type { Project } from '@/lib/types';
+import type { Project, Contribution, CanvasType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, RefreshCw, Loader2, Info } from 'lucide-react';
+import { ArrowLeft, Loader2, Info } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
-import { placePixel, getProjectPixels } from '@/lib/data';
+import { addContribution, getProjectContributions } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
+import { CanvasSwitcher } from '@/components/canvas/canvas-switcher';
 
-export default function CanvasClient({ project, initialPixels }: { project: Project, initialPixels: Map<string, string> }) {
-  const [selectedColor, setSelectedColor] = useState('#000000');
-  const [pixels, setPixels] = useState<Map<string, string>>(initialPixels);
-  const canvasHandleRef = useRef<PixelCanvasHandle>(null);
+export default function CanvasClient({ project, initialContributions }: { project: Project, initialContributions: Contribution[] }) {
+  const [contributions, setContributions] = useState<Contribution[]>(initialContributions);
   const [isClient, setIsClient] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -21,68 +18,69 @@ export default function CanvasClient({ project, initialPixels }: { project: Proj
   useEffect(() => {
     setIsClient(true);
     // Note: To make this truly real-time, a WebSocket or server-sent events
-    // implementation would be needed to push pixel updates from the server.
-    // For now, we'll fetch pixels periodically as a simple polling mechanism.
+    // implementation would be needed to push updates from the server.
+    // For now, we'll fetch contributions periodically as a simple polling mechanism.
     const interval = setInterval(async () => {
-        const newPixels = await getProjectPixels(project.id);
-        setPixels(newPixels);
+        const newContributions = await getProjectContributions(project.id);
+        setContributions(newContributions);
     }, 5000); // Poll every 5 seconds
 
     return () => clearInterval(interval);
   }, [project.id]);
 
-  const handleResetView = () => {
-    canvasHandleRef.current?.resetCanvas();
-  };
-
-  const handlePlacePixel = useCallback(async (x: number, y: number, color: string) => {
+  const handleContribute = useCallback(async (data: any) => {
     if (!user) {
         toast({
             title: "Not Logged In",
-            description: "You must be logged in to place pixels.",
+            description: "You must be logged in to contribute.",
             variant: "destructive",
         });
         return;
     }
     
     // Optimistically update the UI
-    const newPixels = new Map(pixels);
-    newPixels.set(`${x},${y}`, color);
-    setPixels(newPixels);
+    const optimisticContribution: Contribution = {
+        id: new Date().toISOString(), // temporary client-side ID
+        _id: new Date().toISOString() as any,
+        projectId: project._id,
+        userId: user._id,
+        type: project.canvasType,
+        data,
+        createdAt: new Date(),
+    };
+    setContributions(prev => [...prev, optimisticContribution]);
 
     try {
-        const result = await placePixel(project.id, user.id, x, y, color);
+        const result = await addContribution(project.id, user.id, project.canvasType, data);
         if (result.error) {
-            // Revert optimistic update on error
             toast({
-                title: "Error Placing Pixel",
+                title: "Error Saving Contribution",
                 description: result.error,
                 variant: "destructive",
             });
-            setPixels(pixels); // Revert to original state
+            // Revert optimistic update on error
+            setContributions(c => c.filter(c => c.id !== optimisticContribution.id));
         }
     } catch (error) {
-        console.error("Failed to place pixel:", error);
+        console.error("Failed to add contribution:", error);
         toast({
             title: "Error",
-            description: "Could not place pixel. Please try again.",
+            description: "Could not save contribution. Please try again.",
             variant: "destructive",
         });
-        setPixels(pixels); // Revert to original state
+        setContributions(c => c.filter(c => c.id !== optimisticContribution.id));
     }
-  }, [project.id, user, toast, pixels]);
+  }, [project.id, project.canvasType, user, toast]);
 
   return (
     <div className="flex flex-col lg:flex-row h-screen w-screen bg-background text-foreground">
       <div className="flex-grow bg-muted/20 relative flex items-center justify-center overflow-hidden">
         {isClient ? (
-          <PixelCanvas 
-            ref={canvasHandleRef}
-            width={project.width} 
-            height={project.height}
-            pixels={pixels}
-            selectedColor={selectedColor}
-            onPixelPlace={handlePlacePixel}
+          <CanvasSwitcher 
+            project={project}
+            contributions={contributions}
+            onContribute={handleContribute}
+            user={user}
           />
         ) : (
           <div className="flex flex-col items-center gap-4 text-muted-foreground">
@@ -90,16 +88,12 @@ export default function CanvasClient({ project, initialPixels }: { project: Proj
             <p>Loading Canvas...</p>
           </div>
         )}
-         <div className="absolute top-4 left-4 right-4 z-10 flex justify-between pointer-events-none">
+         <div className="absolute top-4 left-4 z-10 pointer-events-none">
             <Button asChild variant="secondary" className="pointer-events-auto">
                 <Link href={`/project/${project.id}`}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back to Details
                 </Link>
-            </Button>
-            <Button variant="secondary" onClick={handleResetView} className="pointer-events-auto">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Reset View
             </Button>
          </div>
       </div>
@@ -109,17 +103,9 @@ export default function CanvasClient({ project, initialPixels }: { project: Proj
             <h1 className="text-2xl font-bold font-headline">{project.title}</h1>
             <p className="text-sm text-muted-foreground">by {project.creatorName}</p>
           </div>
-          <ColorPicker 
-            selectedColor={selectedColor} 
-            onColorSelect={setSelectedColor} 
-          />
-           <div className="text-sm text-muted-foreground p-3 rounded-lg bg-muted/50 border">
-            <h3 className="font-semibold text-foreground mb-2 flex items-center"><Info className="h-4 w-4 mr-2"/>Controls</h3>
-            <ul className="list-none space-y-2">
-                <li><span className="font-semibold">Pan:</span> Middle-click or <kbd className="px-1.5 py-0.5 border rounded-sm bg-background">Ctrl</kbd> + drag.</li>
-                <li><span className="font-semibold">Zoom:</span> <kbd className="px-1.5 py-0.5 border rounded-sm bg-background">Ctrl</kbd> + scroll, or pinch gesture.</li>
-                <li><span className="font-semibold">Place Pixel:</span> Left-click or tap.</li>
-            </ul>
+          <div className="text-sm text-muted-foreground p-3 rounded-lg bg-muted/50 border">
+            <h3 className="font-semibold text-foreground mb-2 flex items-center"><Info className="h-4 w-4 mr-2"/>Prompt</h3>
+            <p>{project.description}</p>
            </div>
         </div>
       </aside>

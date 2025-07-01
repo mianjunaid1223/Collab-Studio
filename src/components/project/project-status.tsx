@@ -2,7 +2,7 @@
 
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import type { Project } from "@/lib/mock-data";
+import type { Project } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type ProjectStatusProps = {
@@ -35,10 +35,6 @@ export function ProjectStatus({ project }: ProjectStatusProps) {
           <span className="font-semibold">{project.completionPercentage}%</span>
         </div>
         <Progress value={project.completionPercentage} aria-label={`${project.completionPercentage}% complete`} />
-      </div>
-       <div className="flex justify-between items-center text-sm font-medium">
-        <span className="text-muted-foreground">Size</span>
-        <span className="font-semibold">{project.width} x {project.height}</span>
       </div>
     </div>
   );

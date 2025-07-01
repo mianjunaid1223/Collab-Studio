@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 import dbConnect, { User, Project } from '@/lib/mongodb';
 import type { User as UserType } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
+import { canvasTypes } from '@/lib/types';
 
 const COOKIE_NAME = 'session';
 
@@ -141,9 +142,7 @@ export async function getCurrentUser(): Promise<UserType | null> {
 const createProjectSchema = z.object({
     title: z.string().min(3),
     description: z.string().min(10),
-    width: z.coerce.number().int().min(16).max(256),
-    height: z.coerce.number().int().min(16).max(256),
-    theme: z.string().min(1),
+    canvasType: z.enum(canvasTypes),
 });
 
 export async function createProject(values: z.infer<typeof createProjectSchema>) {

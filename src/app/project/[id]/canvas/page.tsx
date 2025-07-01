@@ -1,6 +1,7 @@
-import { getProjectById, getProjectPixels } from '@/lib/data';
+import { getProjectById, getProjectContributions } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import CanvasClient from './canvas-client';
+import { Contribution } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +12,7 @@ export default async function CanvasPage({ params }: { params: { id: string } })
     notFound();
   }
 
-  const initialPixels = await getProjectPixels(project.id);
+  const initialContributions: Contribution[] = await getProjectContributions(project.id);
 
-  return <CanvasClient project={project} initialPixels={initialPixels} />;
+  return <CanvasClient project={project} initialContributions={initialContributions} />;
 }

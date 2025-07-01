@@ -23,18 +23,24 @@ import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useAuth } from '@/context/auth-context';
 import { createProject } from '@/app/(auth)/actions';
+import { canvasTypes, type CanvasType } from '@/lib/types';
+import { SewingPinIcon, Shapes, Droplets, Type, Music } from 'lucide-react';
 
 const createProjectSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters long." }),
   description: z.string().min(10, { message: "Description must be at least 10 characters long." }),
-  width: z.coerce.number().int().min(16, { message: "Width must be at least 16px." }).max(256, { message: "Width must be at most 256px." }),
-  height: z.coerce.number().int().min(16, { message: "Height must be at least 16px." }).max(256, { message: "Height must be at most 256px." }),
-  theme: z.string().min(1, { message: "A theme must be selected." }),
+  canvasType: z.enum(canvasTypes, { required_error: "You must select a canvas type."}),
 });
 
 type CreateProjectValues = z.infer<typeof createProjectSchema>;
 
-const themes = ['Fantasy', 'Sci-Fi', 'Urban', 'Nature', 'Abstract', 'Retro', 'Art'];
+const canvasModeDetails: Record<CanvasType, { icon: React.ReactNode, description: string }> = {
+  Embroidery: { icon: '🪡', description: "Users stitch thread lines onto a fabric-style canvas." },
+  Mosaic: { icon: <Shapes className="h-4 w-4" />, description: "Users earn and place shape tiles (triangles, circles, etc.) on a grid." },
+  Watercolor: { icon: <Droplets className="h-4 w-4" />, description: "Users drop virtual ink that spreads and blends with others." },
+  Typographic: { icon: <Type className="h-4 w-4" />, description: "Contributors place letters/emojis to form visual poetry." },
+  AudioVisual: { icon: <Music className="h-4 w-4" />, description: "Users place marks tied to tones, creating a playable soundscape." },
+};
 
 export default function CreateProjectPage() {
   const { toast } = useToast();
@@ -47,9 +53,6 @@ export default function CreateProjectPage() {
     defaultValues: {
       title: "",
       description: "",
-      width: 64,
-      height: 64,
-      theme: 'Fantasy',
     },
   });
 
@@ -86,7 +89,7 @@ export default function CreateProjectPage() {
             <CardHeader>
               <CardTitle className="text-3xl font-headline">Create a New Canvas</CardTitle>
               <CardDescription>
-                Describe your vision. The community will bring it to life, one pixel at a time.
+                Describe your vision and choose a medium. The community will bring it to life.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -108,7 +111,7 @@ export default function CreateProjectPage() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>Description / Prompt</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Describe the scene, mood, and key elements you envision for your canvas."
@@ -122,50 +125,26 @@ export default function CreateProjectPage() {
                 )}
               />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="width"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Width (pixels)</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} disabled={isPending} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="height"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Height (pixels)</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} disabled={isPending} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
                <FormField
                   control={form.control}
-                  name="theme"
+                  name="canvasType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Theme</FormLabel>
+                      <FormLabel>Canvas Medium</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger disabled={isPending}>
-                            <SelectValue placeholder="Select a theme for your project" />
+                            <SelectValue placeholder="Select a medium for your project" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {themes.map(theme => (
-                            <SelectItem key={theme} value={theme}>{theme}</SelectItem>
+                          {canvasTypes.map(type => (
+                            <SelectItem key={type} value={type}>
+                              <div className="flex items-center gap-2">
+                                {canvasModeDetails[type].icon}
+                                <span>{type}</span>
+                              </div>
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>

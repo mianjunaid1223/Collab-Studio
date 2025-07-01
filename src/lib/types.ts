@@ -1,19 +1,22 @@
 import type { Types } from 'mongoose';
 
+export const canvasTypes = ['Embroidery', 'Mosaic', 'Watercolor', 'Typographic', 'AudioVisual'] as const;
+export type CanvasType = typeof canvasTypes[number];
+
 export type Project = {
   _id: Types.ObjectId;
   id: string;
   title: string;
   description: string;
-  width: number;
-  height: number;
+  canvasType: CanvasType;
+  width?: number; // Optional, for grid-based modes
+  height?: number; // Optional, for grid-based modes
   createdBy: Types.ObjectId;
   creatorName: string;
   creatorAvatar: string;
   status: 'Active' | 'Completed' | 'Archived';
   completionPercentage: number;
   contributorCount: number;
-  theme: string;
   createdAt: Date;
 };
 
@@ -27,10 +30,12 @@ export type User = {
   totalContributions: number;
 };
 
-export type Pixel = {
-  x: number;
-  y: number;
-  color: string;
-  userId: Types.ObjectId;
+export type Contribution = {
+  _id: Types.ObjectId;
+  id: string;
   projectId: Types.ObjectId;
+  userId: Types.ObjectId;
+  type: CanvasType;
+  data: any; 
+  createdAt: Date;
 };

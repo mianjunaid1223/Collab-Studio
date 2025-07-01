@@ -1,5 +1,6 @@
 import mongoose, { Schema, type Model, type Document } from 'mongoose';
-import type { User as UserType, Project as ProjectType, Pixel as PixelType } from './types';
+import type { User as UserType, Project as ProjectType, Contribution as ContributionType } from './types';
+import { canvasTypes } from './types';
 
 let cached = global.mongoose;
 
@@ -51,7 +52,6 @@ const UserSchema = new Schema<UserType>({
   totalContributions: { type: Number, default: 0 },
 });
 
-// Use a virtual `id` field to match what Firestore was providing
 UserSchema.virtual('id').get(function () {
   return this._id.toHexString();
 });
@@ -62,15 +62,15 @@ UserSchema.set('toJSON', {
 const ProjectSchema = new Schema<ProjectType>({
   title: { type: String, required: true },
   description: { type: String, required: true },
-  width: { type: Number, required: true },
-  height: { type: Number, required: true },
+  canvasType: { type: String, enum: canvasTypes, required: true },
+  width: { type: Number },
+  height: { type: Number },
   createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   creatorName: { type: String, required: true },
   creatorAvatar: { type: String, required: true },
   status: { type: String, enum: ['Active', 'Completed', 'Archived'], default: 'Active' },
   completionPercentage: { type: Number, default: 0 },
   contributorCount: { type: Number, default: 0 },
-  theme: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -81,22 +81,20 @@ ProjectSchema.set('toJSON', {
   virtuals: true,
 });
 
-const PixelSchema = new Schema<PixelType>({
+const ContributionSchema = new Schema<ContributionType>({
     projectId: { type: Schema.Types.ObjectId, ref: 'Project', required: true },
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    x: { type: Number, required: true },
-    y: { type: Number, required: true },
-    color: { type: String, required: true },
+    type: { type: String, enum: canvasTypes, required: true },
+    data: { type: Schema.Types.Mixed, required: true },
 }, {
     timestamps: true,
 });
-// Create a compound index for efficient upserts
-PixelSchema.index({ projectId: 1, x: 1, y: 1 }, { unique: true });
+ContributionSchema.index({ projectId: 1 });
+
 
 // Mongoose Models
-// To prevent model overwrite errors in HMR, check if the model already exists.
 export const User: Model<UserType> = mongoose.models.User || mongoose.model<UserType>('User', UserSchema);
 export const Project: Model<ProjectType> = mongoose.models.Project || mongoose.model<ProjectType>('Project', ProjectSchema);
-export const Pixel: Model<PixelType> = mongoose.models.Pixel || mongoose.model<PixelType>('Pixel', PixelSchema);
+export const Contribution: Model<ContributionType> = mongoose.models.Contribution || mongoose.model<ContributionType>('Contribution', ContributionSchema);
 
 export default dbConnect;
