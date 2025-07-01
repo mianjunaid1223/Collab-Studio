@@ -2,75 +2,59 @@
 
 import { z } from 'zod';
 import { auth } from '@/lib/firebase';
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut as firebaseSignOut,
-  GoogleAuthProvider,
-  signInWithPopup,
-} from 'firebase/auth';
+import { signOut as firebaseSignOut } from 'firebase/auth';
 import { createUserProfile, getUserProfile } from '@/lib/firestore';
-
-const signupSchema = z.object({
-  username: z.string().min(3).max(20),
-  email: z.string().email(),
-  password: z.string().min(6),
-});
-
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string(),
-});
 
 const FIREBASE_NOT_CONFIGURED_ERROR = "Firebase is not configured. Please add your credentials to a .env.local file.";
 
-async function handleGoogleSignIn(user: import('firebase/auth').User) {
+export async function handleGoogleUser(user: { uid: string; displayName: string | null; email: string | null; photoURL: string | null; }) {
+  if (!auth) return { error: FIREBASE_NOT_CONFIGURED_ERROR };
+  try {
     const userProfile = await getUserProfile(user.uid);
     if (!userProfile) {
+      if (!user.email) {
+          throw new Error("Google user email is not available.");
+      }
       await createUserProfile(user.uid, {
         name: user.displayName || 'Google User',
-        email: user.email!,
+        email: user.email,
         avatar: user.photoURL || 'https://placehold.co/100x100.png',
       });
     }
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
+  }
 }
 
+const createUserSchema = z.object({
+  username: z.string().min(3).max(20),
+  email: z.string().email(),
+  userId: z.string()
+});
 
-export async function signup(values: z.infer<typeof signupSchema>) {
-  if (!auth) return FIREBASE_NOT_CONFIGURED_ERROR;
+export async function createUserInDb(values: z.infer<typeof createUserSchema>) {
+  if (!auth) return { error: FIREBASE_NOT_CONFIGURED_ERROR };
   try {
-    const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-    await createUserProfile(userCredential.user.uid, {
+    await createUserProfile(values.userId, {
       name: values.username,
       email: values.email,
       avatar: 'https://placehold.co/100x100.png',
     });
+    return { success: true };
   } catch (error: any) {
-    return error.message;
-  }
-}
-
-export async function login(values: z.infer<typeof loginSchema>) {
-  if (!auth) return FIREBASE_NOT_CONFIGURED_ERROR;
-  try {
-    await signInWithEmailAndPassword(auth, values.email, values.password);
-  } catch (error: any) {
-    return error.message;
-  }
-}
-
-export async function loginWithGoogle() {
-  if (!auth) return FIREBASE_NOT_CONFIGURED_ERROR;
-  const provider = new GoogleAuthProvider();
-  try {
-    const result = await signInWithPopup(auth, provider);
-    await handleGoogleSignIn(result.user);
-  } catch (error: any) {
-    return error.message;
+    return { error: error.message };
   }
 }
 
 export async function signOut() {
-  if (!auth) return FIREBASE_NOT_CONFIGURED_ERROR;
-  await firebaseSignOut(auth);
+  if (!auth) {
+    console.error(FIREBASE_NOT_CONFIGURED_ERROR);
+    return;
+  }
+  try {
+    await firebaseSignOut(auth);
+  } catch (error: any) {
+    console.error("Sign out error:", error);
+  }
 }

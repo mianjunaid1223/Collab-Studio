@@ -7,6 +7,9 @@ import { z } from "zod";
 import { useTransition } from 'react';
 import { useRouter } from "next/navigation";
 
+import { auth } from "@/lib/firebase";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,7 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { login, loginWithGoogle } from "../actions";
+import { handleGoogleUser } from "../actions";
 import { Loader2 } from "lucide-react";
 
 
@@ -44,25 +47,50 @@ export default function LoginPage() {
 
   const onSubmit = (values: LoginValues) => {
     startTransition(async () => {
-      const error = await login(values);
-      if (error) {
-        toast({ title: "Login Failed", description: error, variant: "destructive" });
-      } else {
+      if (!auth) {
+        toast({ title: "Login Failed", description: "Firebase not configured.", variant: "destructive" });
+        return;
+      }
+      try {
+        await signInWithEmailAndPassword(auth, values.email, values.password);
         toast({ title: "Login Successful", description: "Welcome back!" });
         router.push("/explore");
+      } catch (error: any) {
+        const errorMessage = error.code ? error.code.replace('auth/', '').replace(/-/g, ' ') : error.message;
+        toast({ title: "Login Failed", description: errorMessage, variant: "destructive" });
       }
     });
   };
 
   const handleGoogleLogin = () => {
     startTransition(async () => {
-        const error = await loginWithGoogle();
-        if (error) {
-            toast({ title: "Google Login Failed", description: error, variant: "destructive" });
-        } else {
-            toast({ title: "Login Successful", description: "Welcome!" });
-            router.push("/explore");
+      if (!auth) {
+        toast({ title: "Login Failed", description: "Firebase not configured.", variant: "destructive" });
+        return;
+      }
+      const provider = new GoogleAuthProvider();
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const { user } = result;
+
+        const dbResult = await handleGoogleUser({
+            uid: user.uid,
+            displayName: user.displayName,
+            email: user.email,
+            photoURL: user.photoURL
+        });
+
+        if (dbResult.error) {
+            throw new Error(dbResult.error);
         }
+
+        toast({ title: "Login Successful", description: "Welcome!" });
+        router.push("/explore");
+
+      } catch (error: any) {
+        const errorMessage = error.code ? error.code.replace('auth/', '').replace(/-/g, ' ') : error.message;
+        toast({ title: "Google Login Failed", description: errorMessage, variant: "destructive" });
+      }
     });
   }
 

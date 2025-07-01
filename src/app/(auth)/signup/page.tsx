@@ -6,6 +6,9 @@ import { z } from "zod";
 import { useTransition } from 'react';
 import { useRouter } from "next/navigation";
 
+import { auth } from "@/lib/firebase";
+import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { signup, loginWithGoogle } from "../actions";
+import { createUserInDb, handleGoogleUser } from "../actions";
 import { Loader2 } from "lucide-react";
 
 
@@ -45,25 +48,63 @@ export default function SignupPage() {
 
   const onSubmit = (values: SignupValues) => {
     startTransition(async () => {
-      const error = await signup(values);
-      if (error) {
-        toast({ title: "Sign Up Failed", description: error, variant: "destructive" });
-      } else {
-        toast({ title: "Account Created!", description: "Welcome! Please log in." });
+      if (!auth) {
+        toast({ title: "Sign Up Failed", description: "Firebase not configured.", variant: "destructive" });
+        return;
+      }
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+        const { user } = userCredential;
+
+        const result = await createUserInDb({
+          userId: user.uid,
+          username: values.username,
+          email: values.email,
+        });
+
+        if (result.error) {
+          throw new Error(result.error);
+        }
+
+        toast({ title: "Account Created!", description: "Welcome! You are now logged in." });
         router.push("/explore");
+
+      } catch (error: any) {
+        const errorMessage = error.code ? error.code.replace('auth/', '').replace(/-/g, ' ') : error.message;
+        toast({ title: "Sign Up Failed", description: errorMessage, variant: "destructive" });
       }
     });
   };
 
   const handleGoogleLogin = () => {
     startTransition(async () => {
-        const error = await loginWithGoogle();
-        if (error) {
-            toast({ title: "Google Sign Up Failed", description: error, variant: "destructive" });
-        } else {
-            toast({ title: "Account Created!", description: "Welcome!" });
-            router.push("/explore");
+      if (!auth) {
+        toast({ title: "Sign Up Failed", description: "Firebase not configured.", variant: "destructive" });
+        return;
+      }
+      const provider = new GoogleAuthProvider();
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const { user } = result;
+        
+        const dbResult = await handleGoogleUser({
+            uid: user.uid,
+            displayName: user.displayName,
+            email: user.email,
+            photoURL: user.photoURL
+        });
+
+        if (dbResult.error) {
+            throw new Error(dbResult.error);
         }
+        
+        toast({ title: "Account Created!", description: "Welcome!" });
+        router.push("/explore");
+
+      } catch (error: any) {
+        const errorMessage = error.code ? error.code.replace('auth/', '').replace(/-/g, ' ') : error.message;
+        toast({ title: "Google Sign Up Failed", description: errorMessage, variant: "destructive" });
+      }
     });
   }
 
