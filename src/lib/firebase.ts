@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 
 const firebaseConfig = {
@@ -9,20 +10,27 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Check if all required config values are present
-const isConfigValid = firebaseConfig.apiKey && firebaseConfig.projectId;
+// A function to safely initialize and get the Firebase app instance.
+// This is memoized to ensure it's only called once.
+let app: FirebaseApp | null = null;
+export function getFirebaseApp(): FirebaseApp | null {
+  if (app) {
+    return app;
+  }
 
-// Initialize app only if config is valid
-const app: FirebaseApp | null = isConfigValid
-  ? getApps().length === 0
-    ? initializeApp(firebaseConfig)
-    : getApp()
-  : null;
-
-if (!isConfigValid) {
+  const isConfigValid = firebaseConfig.apiKey && firebaseConfig.projectId;
+  if (!isConfigValid) {
     console.warn(
-      "Firebase configuration is missing or incomplete. Please add your Firebase credentials to a .env.local file at the root of your project. Firebase features will be disabled."
+      "Firebase configuration is missing or incomplete. Firebase features will be disabled."
     );
-}
+    return null;
+  }
 
-export { app };
+  if (getApps().length === 0) {
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApp();
+  }
+
+  return app;
+}

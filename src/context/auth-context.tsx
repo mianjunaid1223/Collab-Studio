@@ -1,8 +1,9 @@
+
 'use client';
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { onAuthStateChanged, type User, type Auth, getAuth, signOut as firebaseSignOut } from 'firebase/auth';
-import { app } from '@/lib/firebase';
+import { getFirebaseApp } from '@/lib/firebase';
 import { getUserProfile, type User as AppUser } from '@/lib/firestore';
 import { Loader2 } from 'lucide-react';
 
@@ -29,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authInstance, setAuthInstance] = useState<Auth | null>(null);
 
   useEffect(() => {
+    const app = getFirebaseApp();
     if (app) {
       const auth = getAuth(app);
       setAuthInstance(auth);
@@ -63,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = { user, appUser, auth: authInstance, loading, signOut };
 
-  if (loading) {
+  if (loading && !authInstance) {
     return (
       <div className="flex items-center justify-center h-screen w-screen">
           <Loader2 className="h-8 w-8 animate-spin" />

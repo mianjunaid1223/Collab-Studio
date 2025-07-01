@@ -11,14 +11,27 @@ import {
   orderBy,
   limit,
   onSnapshot,
-  getFirestore
+  getFirestore,
+  type Firestore,
 } from 'firebase/firestore';
-import { app } from './firebase';
-import type { Project, User, Pixel } from './types';
+import { getFirebaseApp } from './firebase';
+import type { Project, User } from './types';
 
-const db = app ? getFirestore(app) : null;
-
+let db: Firestore | null = null;
 const FIREBASE_NOT_CONFIGURED_ERROR = "Firebase is not configured. Please check your environment variables.";
+
+function getDb() {
+  if (db) {
+    return db;
+  }
+  const app = getFirebaseApp();
+  if (app) {
+    db = getFirestore(app);
+    return db;
+  }
+  return null;
+}
+
 
 // --- User Functions ---
 
@@ -26,6 +39,7 @@ export async function createUserProfile(
   userId: string,
   data: { name: string; email: string; avatar: string }
 ): Promise<void> {
+  const db = getDb();
   if (!db) throw new Error(FIREBASE_NOT_CONFIGURED_ERROR);
   await setDoc(doc(db, 'users', userId), {
     ...data,
@@ -35,6 +49,7 @@ export async function createUserProfile(
 }
 
 export async function getUserProfile(userId: string): Promise<User | null> {
+  const db = getDb();
   if (!db) return null;
   const userDoc = await getDoc(doc(db, 'users', userId));
   if (userDoc.exists()) {
@@ -46,6 +61,7 @@ export async function getUserProfile(userId: string): Promise<User | null> {
 // --- Project Functions ---
 
 export async function createProject(projectData: Omit<Project, 'id' | 'createdAt' | 'status' | 'completionPercentage' | 'contributorCount'>): Promise<string> {
+  const db = getDb();
   if (!db) throw new Error(FIREBASE_NOT_CONFIGURED_ERROR);
   const projectWithTimestamp = {
     ...projectData,
@@ -59,6 +75,7 @@ export async function createProject(projectData: Omit<Project, 'id' | 'createdAt
 }
 
 export async function getProjects(count?: number): Promise<Project[]> {
+  const db = getDb();
   if (!db) return [];
   const projectsRef = collection(db, 'projects');
   const q = count 
@@ -71,6 +88,7 @@ export async function getProjects(count?: number): Promise<Project[]> {
 
 
 export async function getCompletedProjects(count: number): Promise<Project[]> {
+    const db = getDb();
     if (!db) return [];
     const q = query(
         collection(db, 'projects'),
@@ -83,6 +101,7 @@ export async function getCompletedProjects(count: number): Promise<Project[]> {
 
 
 export async function getProjectById(id: string): Promise<Project | null> {
+  const db = getDb();
   if (!db) return null;
   const projectDoc = await getDoc(doc(db, 'projects', id));
   if (projectDoc.exists()) {
@@ -94,6 +113,7 @@ export async function getProjectById(id: string): Promise<Project | null> {
 // --- Pixel Functions ---
 
 export function streamProjectPixels(projectId: string, callback: (pixels: Map<string, string>) => void) {
+  const db = getDb();
   if (!db) return () => {}; // Return a no-op unsubscribe function
   const pixelsRef = collection(db, `projects/${projectId}/pixels`);
   
@@ -108,6 +128,7 @@ export function streamProjectPixels(projectId: string, callback: (pixels: Map<st
 }
 
 export async function placePixel(projectId: string, userId: string, x: number, y: number, color: string) {
+    const db = getDb();
     if (!db) throw new Error(FIREBASE_NOT_CONFIGURED_ERROR);
     const pixelRef = doc(db, `projects/${projectId}/pixels`, `${x},${y}`);
     await setDoc(pixelRef, { color, userId, updatedAt: serverTimestamp() });
@@ -117,6 +138,7 @@ export async function placePixel(projectId: string, userId: string, x: number, y
 }
 
 export async function getContributors(projectId: string): Promise<User[]> {
+    const db = getDb();
     if (!db) return [];
     
     // This implementation can be slow and expensive on projects with many pixels.
