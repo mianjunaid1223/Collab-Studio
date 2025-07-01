@@ -15,7 +15,8 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useState } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { signOut } from '@/app/(auth)/actions';
+import { auth } from '@/lib/firebase';
+import { signOut as firebaseSignOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
 const navLinks = [
@@ -29,8 +30,18 @@ export function Header() {
   const router = useRouter();
 
   const handleSignOut = async () => {
-    await signOut();
-    router.push('/');
+    if (!auth) {
+      console.error("Firebase not configured, cannot sign out.");
+      // Optionally, show a toast to the user
+      return;
+    }
+    try {
+      await firebaseSignOut(auth);
+      router.push('/');
+    } catch (error) {
+      console.error("Sign out error:", error);
+      // Optionally, show a toast to the user
+    }
   };
 
   const closeSheet = () => setSheetOpen(false);
