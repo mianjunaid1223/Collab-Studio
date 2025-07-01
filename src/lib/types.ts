@@ -1,7 +1,21 @@
 import type { Types } from 'mongoose';
+import type { Server as NetServer, Socket } from 'net';
+import type { NextApiResponse } from 'next';
+import type { Server as SocketIOServer } from 'socket.io';
 
 export const canvasTypes = ['Embroidery', 'Mosaic', 'Watercolor', 'AudioVisual'] as const;
 export type CanvasType = typeof canvasTypes[number];
+
+// This type is used to attach the Socket.IO server instance to the
+// Next.js API response object. This is a standard pattern for using
+// Socket.IO with Next.js's API routes.
+export type NextApiResponseServerIO = NextApiResponse & {
+  socket: Socket & {
+    server: NetServer & {
+      io: SocketIOServer;
+    };
+  };
+};
 
 export type Project = {
   _id: Types.ObjectId;

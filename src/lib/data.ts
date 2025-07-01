@@ -93,23 +93,24 @@ export async function getProjectContributions(projectId: string): Promise<Contri
     }
 }
 
-export async function addContribution(projectId: string, userId: string, type: CanvasType, data: any) {
+// NOTE: This is no longer a 'use server' action. It's a regular async function
+// called by our WebSocket server to persist contributions.
+export async function saveContribution(projectId: string, userId: string, type: CanvasType, data: any): Promise<ContributionType | null> {
     try {
         const conn = await dbConnect();
         if (!conn) {
-            return { error: 'Database is not configured. Contribution cannot be saved.' };
+            console.error('Database is not configured. Contribution cannot be saved.');
+            return null;
         }
         
-        await Contribution.create({ projectId, userId, type, data });
+        const newContribution = await Contribution.create({ projectId, userId, type, data });
         
-        // In a real app, you would also update contributor counts and user stats here,
-        // possibly in a transaction or a background job for better performance and consistency.
+        // In a real app, you might also update contributor counts and user stats here.
         
-        revalidatePath(`/project/${projectId}/canvas`);
-        return { success: true };
+        return JSON.parse(JSON.stringify(newContribution));
     } catch (error) {
         console.error('Failed to add contribution:', error);
-        return { error: "Could not save contribution. Please try again." };
+        return null;
     }
 }
 

@@ -1,11 +1,11 @@
 'use client';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import type { Socket } from 'socket.io-client';
 import type { Project, Contribution, User } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Info } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
-import { addContribution, getProjectContributions } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { CanvasSwitcher } from '@/components/canvas/canvas-switcher';
 import { CanvasTools } from '@/components/canvas/canvas-tools';
@@ -15,6 +15,7 @@ export default function CanvasClient({ project, initialContributions }: { projec
   const [isClient, setIsClient] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   // Tool state
   const [activeColor, setActiveColor] = useState('#64B5F6');
@@ -25,17 +26,55 @@ export default function CanvasClient({ project, initialContributions }: { projec
 
   useEffect(() => {
     setIsClient(true);
-    const interval = setInterval(async () => {
-        try {
-            const newContributions = await getProjectContributions(project.id);
-            setContributions(newContributions);
-        } catch (error) {
-            console.error("Failed to poll for contributions", error);
-        }
-    }, 2000); // Increased refresh rate for more 'live' feel
+    
+    // This fetch ensures the server-side socket is initialized before we try to connect
+    const initSocket = async () => {
+      await fetch('/api/socket');
+      const { io } = await import('socket.io-client');
+      
+      const newSocket = io({
+        path: '/api/socket',
+        addTrailingSlash: false,
+      });
 
-    return () => clearInterval(interval);
-  }, [project.id]);
+      newSocket.on('connect', () => {
+        console.log('Connected to socket server!');
+        newSocket.emit('join-project', project.id);
+        setSocket(newSocket);
+      });
+
+      newSocket.on('contribution-broadcast', (newContribution: Contribution) => {
+        // We only add the contribution if it's from another user,
+        // as we've already added our own optimistically.
+        if (newContribution.userId !== user?.id) {
+          setContributions((prev) => [...prev, newContribution]);
+        }
+      });
+      
+      newSocket.on('contribution-error', (errorMessage: string) => {
+        toast({
+          title: "Contribution Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        // A more robust implementation would roll back the optimistic update.
+      });
+
+      newSocket.on('disconnect', () => {
+        console.log('Disconnected from socket server.');
+        setSocket(null);
+      });
+    };
+
+    initSocket();
+
+    return () => {
+      socket?.disconnect();
+    };
+    // We don't include `socket` in the dependency array to prevent re-connecting on every state change.
+    // The connection should persist for the lifetime of the component.
+  }, [project.id, user?.id, toast]);
+
 
   const handleContribute = useCallback(async (data: any) => {
     if (!user) {
@@ -46,7 +85,16 @@ export default function CanvasClient({ project, initialContributions }: { projec
         });
         return;
     }
+     if (!socket) {
+        toast({
+            title: "Not Connected",
+            description: "You are not connected to the live session. Please refresh.",
+            variant: "destructive"
+        });
+        return;
+    }
     
+    // Optimistic update
     const optimisticContribution: Contribution = {
         id: new Date().toISOString(),
         _id: new Date().toISOString() as any,
@@ -58,26 +106,15 @@ export default function CanvasClient({ project, initialContributions }: { projec
     };
     setContributions(prev => [...prev, optimisticContribution]);
 
-    try {
-        const result = await addContribution(project.id, user.id, project.canvasType, data);
-        if (result.error) {
-            toast({
-                title: "Error Saving Contribution",
-                description: result.error,
-                variant: "destructive",
-            });
-            setContributions(c => c.filter(c => c.id !== optimisticContribution.id));
-        }
-    } catch (error) {
-        console.error("Failed to add contribution:", error);
-        toast({
-            title: "Error",
-            description: "Could not save contribution. Please try again.",
-            variant: "destructive",
-        });
-        setContributions(c => c.filter(c => c.id !== optimisticContribution.id));
-    }
-  }, [project.id, project.canvasType, user, toast]);
+    // Emit event to the server instead of calling a server action
+    socket.emit('new-contribution', {
+      projectId: project.id,
+      userId: user.id,
+      type: project.canvasType,
+      data,
+    });
+
+  }, [project.id, project.canvasType, user, toast, socket]);
 
   return (
     <div className="flex flex-col lg:flex-row h-screen w-screen bg-background text-foreground">
