@@ -1,6 +1,6 @@
 import { Server as SocketIOServer } from 'socket.io';
 import type { NextApiRequest } from 'next';
-import type { NextApiResponseServerIO, Project, Contribution } from '@/lib/types';
+import type { NextApiResponseServerIO, Contribution } from '@/lib/types';
 import { saveContribution } from '@/lib/data';
 
 export const config = {
@@ -36,9 +36,17 @@ const socketHandler = (req: NextApiRequest, res: NextApiResponseServerIO) => {
           );
 
           if (result) {
-            const { newContribution, updatedProject } = result;
-            // Broadcast the new contribution to all clients in the project room
-            io.to(contributionData.projectId).emit('contribution-broadcast', newContribution);
+            const { newContribution, removedData, updatedProject } = result;
+            
+            if (newContribution) {
+              // Broadcast the new contribution to all clients in the project room
+              io.to(contributionData.projectId).emit('contribution-broadcast', newContribution);
+            }
+            if (removedData) {
+              // Broadcast that a contribution was removed (for audiovisual note toggling)
+              io.to(contributionData.projectId).emit('contribution-removed', removedData);
+            }
+            
             // Broadcast the project update (e.g., progress change)
             io.to(contributionData.projectId).emit('project-updated', updatedProject);
           }

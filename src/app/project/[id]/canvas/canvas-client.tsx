@@ -50,6 +50,15 @@ export default function CanvasClient({ project: initialProject, initialContribut
         setContributions((prev) => [...prev, newContribution]);
       });
 
+      newSocket.on('contribution-removed', (removedData: any) => {
+        // This handler is specifically for the AudioVisual canvas note removal
+        if (project.canvasType === 'AudioVisual' && removedData.col !== undefined && removedData.row !== undefined) {
+            setContributions((prev) => 
+                prev.filter(c => !(c.data.col === removedData.col && c.data.row === removedData.row))
+            );
+        }
+      });
+
       newSocket.on('project-updated', (updatedProject: Project) => {
         setProject(updatedProject);
          toast({
@@ -79,7 +88,7 @@ export default function CanvasClient({ project: initialProject, initialContribut
     return () => {
       socket?.disconnect();
     };
-  }, [project.id, toast]);
+  }, [project.id, project.canvasType, toast]);
 
 
   const handleContribute = useCallback(async (data: any) => {

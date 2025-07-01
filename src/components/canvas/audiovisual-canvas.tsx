@@ -105,29 +105,21 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
     const handleCellClick = (col: number, row: number) => {
         if (!user) return;
         const key = `${col},${row}`;
+        // The `active` property will be true if we are adding a note, false if removing.
         onContribute({ col, row, active: !grid.has(key) });
     };
 
     return (
         <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-muted/20 gap-4">
              <div 
-                className="grid bg-card border-2 border-border shadow-2xl relative overflow-hidden aspect-square"
+                className="grid bg-card border-2 border-border shadow-2xl relative overflow-hidden"
                 style={{
                     gridTemplateColumns: `repeat(${COLS}, 1fr)`,
                     gridTemplateRows: `repeat(${ROWS}, 1fr)`,
                     width: 'min(90vw, 90vh)',
+                    aspectRatio: `${COLS} / ${ROWS}`,
                 }}
             >
-                {isPlaying && currentStep >= 0 && (
-                    <div 
-                        className="absolute top-0 bottom-0 bg-accent/20 rounded-md transition-transform duration-100 ease-linear"
-                        style={{
-                            width: `${100/COLS}%`,
-                            transform: `translateX(${currentStep * 100}%)`,
-                            boxShadow: '0 0 15px 3px hsl(var(--accent))',
-                        }}
-                    />
-                )}
                 {Array.from({ length: COLS * ROWS }).map((_, i) => {
                     const col = i % COLS;
                     const row = Math.floor(i / COLS);
@@ -137,13 +129,19 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
                     return (
                         <div
                             key={`${col}-${row}`}
-                            className={`w-full h-full border-r border-b border-muted/20 flex items-center justify-center z-10 ${user ? 'cursor-pointer' : ''}`}
+                            className={cn(
+                                'w-full h-full border-r border-b border-muted/20 flex items-center justify-center',
+                                user ? 'cursor-pointer' : ''
+                            )}
                             onClick={() => handleCellClick(col, row)}
                         >
                             <div className={cn(
                                 'w-3/4 h-3/4 rounded-sm transition-all duration-200',
-                                isActive ? 'bg-primary' : 'bg-muted hover:bg-muted-foreground/20',
-                                isPlayingNote && isActive && 'animate-pulse bg-primary-foreground shadow-lg shadow-primary-foreground'
+                                {
+                                    'bg-destructive animate-pulse': isPlayingNote && isActive, // Red and pulsing when playing
+                                    'bg-primary': isActive && !isPlayingNote, // Primary color when active but not playing
+                                    'bg-muted hover:bg-muted-foreground/20': !isActive, // Muted when inactive
+                                }
                             )} />
                         </div>
                     );

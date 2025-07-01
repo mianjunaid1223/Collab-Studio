@@ -93,61 +93,81 @@ export async function getProjectContributions(projectId: string): Promise<Contri
     }
 }
 
-// NOTE: This is no longer a 'use server' action. It's a regular async function
-// called by our WebSocket server to persist contributions.
+// Helper function to update project stats after a contribution
+async function updateProjectStats(projectId: string) {
+    const contributionCount = await Contribution.countDocuments({ projectId });
+    const project = await Project.findById(projectId);
+    
+    if (!project) {
+        console.error(`Project with id ${projectId} not found during stat update.`);
+        return null;
+    }
+
+    const completionPercentage = Math.min(
+        Math.round((contributionCount / project.maxContributions) * 100),
+        100
+    );
+    
+    project.completionPercentage = completionPercentage;
+    if (completionPercentage >= 100 && project.status !== 'Completed') {
+        project.status = 'Completed';
+    }
+    
+    const distinctContributors = await Contribution.distinct('userId', { projectId });
+    project.contributorCount = distinctContributors.length;
+
+    await project.save();
+    
+    revalidatePath(`/project/${projectId}`);
+    revalidatePath('/explore');
+    
+    return JSON.parse(JSON.stringify(project));
+}
+
 export async function saveContribution(
     projectId: string, 
     userId: string, 
     type: CanvasType, 
     data: any
-): Promise<{ newContribution: ContributionType; updatedProject: ProjectType } | null> {
+): Promise<{ newContribution?: ContributionType; removedData?: any; updatedProject: ProjectType } | null> {
     try {
         const conn = await dbConnect();
         if (!conn) {
             console.error('Database is not configured. Contribution cannot be saved.');
             return null;
         }
-        
-        // 1. Save the new contribution
-        const newContribution = await Contribution.create({ projectId, userId, type, data });
-        
-        // 2. Update Project Progress
-        const contributionCount = await Contribution.countDocuments({ projectId });
-        const project = await Project.findById(projectId);
-        
-        if (!project) {
-            console.error(`Project with id ${projectId} not found during contribution save.`);
-            return null;
-        }
 
-        const completionPercentage = Math.min(
-            Math.round((contributionCount / project.maxContributions) * 100),
-            100
-        );
-        
-        project.completionPercentage = completionPercentage;
-        if (completionPercentage >= 100) {
-            project.status = 'Completed';
+        let newContribution: ContributionType | null = null;
+        let removedData: any = null;
+
+        // --- Handle AudioVisual Toggle ---
+        // If 'active' is false, it's a removal. If 'active' is true or undefined, it's an addition.
+        if (type === 'AudioVisual' && data.active === false) {
+            const deletedContribution = await Contribution.findOneAndDelete({
+                projectId,
+                'data.col': data.col,
+                'data.row': data.row
+            }).lean();
+            
+            if (!deletedContribution) return null; // Nothing was deleted, so no update needed.
+            removedData = deletedContribution.data;
+        } else {
+            // Default behavior: add a new contribution
+            const created = await Contribution.create({ projectId, userId, type, data });
+            newContribution = JSON.parse(JSON.stringify(created));
         }
         
-        // This is a simple contributor count. A more robust implementation
-        // would use a Set to count unique contributors.
-        const distinctContributors = await Contribution.distinct('userId', { projectId });
-        project.contributorCount = distinctContributors.length;
-
-        await project.save();
+        const updatedProject = await updateProjectStats(projectId);
+        if (!updatedProject) return null;
         
-        // Revalidate paths so data is fresh on next navigation
-        revalidatePath(`/project/${projectId}`);
-        revalidatePath('/explore');
-
         return {
-          newContribution: JSON.parse(JSON.stringify(newContribution)),
-          updatedProject: JSON.parse(JSON.stringify(project)),
+          newContribution: newContribution || undefined,
+          removedData: removedData || undefined,
+          updatedProject,
         };
 
     } catch (error) {
-        console.error('Failed to add contribution and update project:', error);
+        console.error('Failed to process contribution:', error);
         return null;
     }
 }
