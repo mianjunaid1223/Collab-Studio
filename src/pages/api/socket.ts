@@ -1,8 +1,7 @@
 import { Server as SocketIOServer } from 'socket.io';
 import type { NextApiRequest } from 'next';
-import type { NextApiResponseServerIO } from '@/lib/types';
+import type { NextApiResponseServerIO, Project, Contribution } from '@/lib/types';
 import { saveContribution } from '@/lib/data';
-import type { Contribution } from '@/lib/types';
 
 export const config = {
   api: {
@@ -29,21 +28,22 @@ const socketHandler = (req: NextApiRequest, res: NextApiResponseServerIO) => {
 
       socket.on('new-contribution', async (contributionData: { projectId: string; userId: string; type: Contribution['type']; data: any }) => {
         try {
-          // Save the contribution to the database
-          const newContribution = await saveContribution(
+          const result = await saveContribution(
             contributionData.projectId,
             contributionData.userId,
             contributionData.type,
             contributionData.data
           );
 
-          if (newContribution) {
-            // Broadcast the saved contribution to all clients in the project room
+          if (result) {
+            const { newContribution, updatedProject } = result;
+            // Broadcast the new contribution to all clients in the project room
             io.to(contributionData.projectId).emit('contribution-broadcast', newContribution);
+            // Broadcast the project update (e.g., progress change)
+            io.to(contributionData.projectId).emit('project-updated', updatedProject);
           }
         } catch (error) {
           console.error('Error handling new contribution:', error);
-          // Optionally, emit an error back to the original sender
           socket.emit('contribution-error', 'Failed to save contribution.');
         }
       });

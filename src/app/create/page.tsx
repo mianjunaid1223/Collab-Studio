@@ -34,7 +34,7 @@ const createProjectSchema = z.object({
 
 type CreateProjectValues = z.infer<typeof createProjectSchema>;
 
-const canvasModeDetails: Record<Exclude<CanvasType, 'Typographic'>, { icon: React.ReactNode, description: string }> = {
+const canvasModeDetails: Record<CanvasType, { icon: React.ReactNode, description: string }> = {
   Embroidery: { icon: '🪡', description: "Users stitch thread lines onto a fabric-style canvas." },
   Mosaic: { icon: <Shapes className="h-4 w-4" />, description: "Users earn and place shape tiles (triangles, circles, etc.) on a grid." },
   Watercolor: { icon: <Droplets className="h-4 w-4" />, description: "Users drop virtual ink that spreads and blends with others." },
@@ -140,7 +140,7 @@ export default function CreateProjectPage() {
                           {canvasTypes.map(type => (
                             <SelectItem key={type} value={type}>
                               <div className="flex items-center gap-2">
-                                {canvasModeDetails[type as Exclude<CanvasType, 'Typographic'>].icon}
+                                {canvasModeDetails[type as CanvasType].icon}
                                 <span>{type}</span>
                               </div>
                             </SelectItem>

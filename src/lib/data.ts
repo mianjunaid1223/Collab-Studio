@@ -95,7 +95,12 @@ export async function getProjectContributions(projectId: string): Promise<Contri
 
 // NOTE: This is no longer a 'use server' action. It's a regular async function
 // called by our WebSocket server to persist contributions.
-export async function saveContribution(projectId: string, userId: string, type: CanvasType, data: any): Promise<ContributionType | null> {
+export async function saveContribution(
+    projectId: string, 
+    userId: string, 
+    type: CanvasType, 
+    data: any
+): Promise<{ newContribution: ContributionType; updatedProject: ProjectType } | null> {
     try {
         const conn = await dbConnect();
         if (!conn) {
@@ -103,13 +108,46 @@ export async function saveContribution(projectId: string, userId: string, type: 
             return null;
         }
         
+        // 1. Save the new contribution
         const newContribution = await Contribution.create({ projectId, userId, type, data });
         
-        // In a real app, you might also update contributor counts and user stats here.
+        // 2. Update Project Progress
+        const contributionCount = await Contribution.countDocuments({ projectId });
+        const project = await Project.findById(projectId);
         
-        return JSON.parse(JSON.stringify(newContribution));
+        if (!project) {
+            console.error(`Project with id ${projectId} not found during contribution save.`);
+            return null;
+        }
+
+        const completionPercentage = Math.min(
+            Math.round((contributionCount / project.maxContributions) * 100),
+            100
+        );
+        
+        project.completionPercentage = completionPercentage;
+        if (completionPercentage >= 100) {
+            project.status = 'Completed';
+        }
+        
+        // This is a simple contributor count. A more robust implementation
+        // would use a Set to count unique contributors.
+        const distinctContributors = await Contribution.distinct('userId', { projectId });
+        project.contributorCount = distinctContributors.length;
+
+        await project.save();
+        
+        // Revalidate paths so data is fresh on next navigation
+        revalidatePath(`/project/${projectId}`);
+        revalidatePath('/explore');
+
+        return {
+          newContribution: JSON.parse(JSON.stringify(newContribution)),
+          updatedProject: JSON.parse(JSON.stringify(project)),
+        };
+
     } catch (error) {
-        console.error('Failed to add contribution:', error);
+        console.error('Failed to add contribution and update project:', error);
         return null;
     }
 }

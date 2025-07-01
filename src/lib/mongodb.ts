@@ -50,6 +50,7 @@ const UserSchema = new Schema<UserType>({
   avatar: { type: String, required: true },
   streak: { type: Number, default: 0 },
   totalContributions: { type: Number, default: 0 },
+  isAdmin: { type: Boolean, default: false },
 });
 
 UserSchema.virtual('id').get(function () {
@@ -65,6 +66,7 @@ const ProjectSchema = new Schema<ProjectType>({
   canvasType: { type: String, enum: canvasTypes, required: true },
   width: { type: Number },
   height: { type: Number },
+  maxContributions: { type: Number, default: 100 },
   createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   creatorName: { type: String, required: true },
   creatorAvatar: { type: String, required: true },
@@ -88,6 +90,12 @@ const ContributionSchema = new Schema<ContributionType>({
     data: { type: Schema.Types.Mixed, required: true },
 }, {
     timestamps: true,
+});
+ContributionSchema.virtual('id').get(function () {
+  return this._id.toHexString();
+});
+ContributionSchema.set('toJSON', {
+  virtuals: true,
 });
 ContributionSchema.index({ projectId: 1 });
 

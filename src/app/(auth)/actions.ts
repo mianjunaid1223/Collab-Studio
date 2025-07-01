@@ -5,9 +5,10 @@ import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import dbConnect, { User, Project } from '@/lib/mongodb';
-import type { User as UserType } from '@/lib/types';
+import type { User as UserType, CanvasType } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { canvasTypes } from '@/lib/types';
+import { redirect } from 'next/navigation';
 
 const COOKIE_NAME = 'session';
 
@@ -139,6 +140,14 @@ export async function getCurrentUser(): Promise<UserType | null> {
 
 // --- Data Actions ---
 
+// Default max contributions for each canvas type
+const maxContributionsMap: Record<CanvasType, number> = {
+    Mosaic: 32 * 32, // 1024
+    Embroidery: 500,
+    Watercolor: 200,
+    AudioVisual: 16 * 8, // 128
+};
+
 const createProjectSchema = z.object({
     title: z.string().min(3),
     description: z.string().min(10),
@@ -158,10 +167,11 @@ export async function createProject(values: z.infer<typeof createProjectSchema>)
         }
         const newProject = new Project({
             ...values,
+            maxContributions: maxContributionsMap[values.canvasType],
             createdBy: user.id,
             creatorName: user.name,
             creatorAvatar: user.avatar,
-            contributorCount: 1, // Start with creator as first contributor
+            contributorCount: 1,
         });
 
         await newProject.save();
@@ -171,4 +181,45 @@ export async function createProject(values: z.infer<typeof createProjectSchema>)
         console.error(error);
         return { error: 'Failed to create project.' };
     }
+}
+
+// --- Admin Actions ---
+
+export async function archiveProject(projectId: string) {
+    const user = await getCurrentUser();
+    if (!user?.isAdmin) {
+        return { error: "You are not authorized to perform this action." };
+    }
+    
+    try {
+        const conn = await dbConnect();
+        if (!conn) return { error: 'Database is not configured.' };
+        
+        await Project.findByIdAndUpdate(projectId, { status: 'Archived' });
+        revalidatePath(`/project/${projectId}`);
+        revalidatePath('/explore');
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { error: 'Failed to archive project.' };
+    }
+}
+
+export async function deleteProject(projectId: string) {
+    const user = await getCurrentUser();
+    if (!user?.isAdmin) {
+        return { error: "You are not authorized to perform this action." };
+    }
+    
+    try {
+        const conn = await dbConnect();
+        if (!conn) return { error: 'Database is not configured.' };
+
+        await Project.findByIdAndDelete(projectId);
+        revalidatePath('/explore');
+    } catch (error) {
+        console.error(error);
+        return { error: 'Failed to delete project.' };
+    }
+    redirect('/explore');
 }

@@ -1,13 +1,17 @@
-import { getProjectById, getContributors } from '@/lib/data';
+import { getProjectById, getContributors, getProjectContributions } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Download, Users, Brush, Shapes, Droplets, Music } from 'lucide-react';
+import { Users, Brush, Shapes, Droplets, Music, ShieldAlert } from 'lucide-react';
 import { ProjectStatus } from '@/components/project/project-status';
-import type { Project } from '@/lib/types';
+import type { Project, Contribution, User } from '@/lib/types';
+import { getCurrentUser } from '@/app/(auth)/actions';
+import { AdminActions } from '@/components/project/admin-actions';
+import { DownloadButton } from '@/components/project/download-button';
+
 
 const canvasModeDetails: Record<Exclude<Project['canvasType'], 'Typographic'>, { icon: React.ReactNode }> = {
   Embroidery: { icon: '🪡' },
@@ -24,7 +28,13 @@ export default async function ProjectPage({ params }: { params: { id: string } }
     notFound();
   }
 
-  const contributors = await getContributors(project.id);
+  // Fetch all necessary data in parallel
+  const [user, contributors, contributions] = await Promise.all([
+    getCurrentUser(),
+    getContributors(project.id),
+    getProjectContributions(project.id)
+  ]);
+  
   const modeDetails = canvasModeDetails[project.canvasType as Exclude<Project['canvasType'], 'Typographic'>];
 
   return (
@@ -76,10 +86,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
             <CardContent>
               <ProjectStatus project={project} />
               {project.status === 'Completed' && (
-                <Button className="w-full mt-4">
-                  <Download className="mr-2 h-4 w-4" />
-                  Download
-                </Button>
+                 <DownloadButton project={project} contributions={contributions} />
               )}
             </CardContent>
           </Card>
@@ -92,20 +99,35 @@ export default async function ProjectPage({ params }: { params: { id: string } }
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 max-h-96 overflow-y-auto">
-              {contributors.length > 0 ? contributors.map(user => (
-                <Link href={`/profile/${user.id}`} key={user.id} className="flex items-center space-x-3 hover:bg-muted p-2 rounded-md">
+              {contributors.length > 0 ? contributors.map(contributor => (
+                <Link href={`/profile/${contributor.id}`} key={contributor.id} className="flex items-center space-x-3 hover:bg-muted p-2 rounded-md">
                    <Avatar>
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={contributor.avatar} alt={contributor.name} />
+                    <AvatarFallback>{contributor.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col">
-                    <span className="font-semibold text-sm">{user.name}</span>
-                    <span className="text-xs text-muted-foreground">Contributed {user.totalContributions.toLocaleString()} times</span>
+                    <span className="font-semibold text-sm">{contributor.name}</span>
+                    {/* Contribution count per user is a future improvement */}
+                    {/* <span className="text-xs text-muted-foreground">Contributed {user.totalContributions.toLocaleString()} times</span> */}
                   </div>
                 </Link>
               )) : <p className="text-sm text-muted-foreground">Be the first to contribute!</p>}
             </CardContent>
           </Card>
+
+          {user?.isAdmin && (
+            <Card className="border-destructive/50">
+              <CardHeader>
+                <CardTitle className="flex items-center text-destructive">
+                  <ShieldAlert className="mr-2 h-5 w-5" />
+                  Admin Tools
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AdminActions projectId={project.id} />
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

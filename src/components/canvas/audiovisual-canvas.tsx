@@ -11,15 +11,14 @@ interface CanvasProps {
   onContribute: (data: any) => Promise<void>;
   user: User | null;
   activeWaveform: 'sine' | 'square' | 'triangle' | 'sawtooth';
+  activeBPM: number;
 }
 
 const COLS = 16;
 const ROWS = 8; 
 const PITCHES = [523.25, 493.88, 440.00, 392.00, 349.23, 329.63, 293.66, 261.63]; // C Major scale, high to low
-const BPM = 120;
-const SECONDS_PER_STEP = (60 / BPM) / 2; // 8th notes
 
-export function AudioVisualCanvas({ project, contributions, onContribute, user, activeWaveform }: CanvasProps) {
+export function AudioVisualCanvas({ project, contributions, onContribute, user, activeWaveform, activeBPM }: CanvasProps) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentStep, setCurrentStep] = useState(-1);
 
@@ -29,6 +28,8 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
             grid.set(`${c.data.col},${c.data.row}`, true);
         }
     });
+
+    const secondsPerStep = (60 / activeBPM) / 2; // 8th notes
 
     const audioContextRef = useRef<AudioContext | null>(null);
     const animationFrameId = useRef<number>();
@@ -51,25 +52,25 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
                     osc.type = activeWaveform;
                     osc.frequency.value = PITCHES[row];
                     gainNode.gain.setValueAtTime(0.3, nextNoteTimeRef.current);
-                    gainNode.gain.exponentialRampToValueAtTime(0.001, nextNoteTimeRef.current + SECONDS_PER_STEP * 0.9);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, nextNoteTimeRef.current + secondsPerStep * 0.9);
                     osc.start(nextNoteTimeRef.current);
-                    osc.stop(nextNoteTimeRef.current + SECONDS_PER_STEP * 0.9);
+                    osc.stop(nextNoteTimeRef.current + secondsPerStep * 0.9);
                 }
             }
-            nextNoteTimeRef.current += SECONDS_PER_STEP;
+            nextNoteTimeRef.current += secondsPerStep;
             stepRef.current = (stepRef.current + 1) % COLS;
         }
         schedulerTimerRef.current = setTimeout(scheduleNotes, 25.0);
-    }, [grid, activeWaveform]);
+    }, [grid, activeWaveform, secondsPerStep]);
     
     const visualScheduler = useCallback(() => {
         if (isPlaying && audioContextRef.current) {
-            const timeElapsed = audioContextRef.current.currentTime - (nextNoteTimeRef.current - (COLS + 1) * SECONDS_PER_STEP);
-            const step = Math.floor(timeElapsed / SECONDS_PER_STEP) % COLS;
+            const timeSincePlayStart = audioContextRef.current.currentTime - (nextNoteTimeRef.current - (stepRef.current + COLS) * secondsPerStep);
+            const step = Math.floor(timeSincePlayStart / secondsPerStep) % COLS;
             setCurrentStep(step);
         }
         animationFrameId.current = requestAnimationFrame(visualScheduler);
-    }, [isPlaying]);
+    }, [isPlaying, secondsPerStep]);
 
 
     const togglePlay = () => {

@@ -7,7 +7,7 @@ import { ColorPicker } from "./color-picker";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Waves, Circle, Square, Minus, Plus, Blend } from "lucide-react";
+import { Waves, Circle, Square, Minus, Plus, Blend, Music } from "lucide-react";
 
 interface CanvasToolsProps {
   canvasType: CanvasType;
@@ -23,6 +23,8 @@ interface CanvasToolsProps {
   onWaveformChange: (waveform: 'sine' | 'square' | 'triangle' | 'sawtooth') => void;
   activeBlur: number;
   onBlurChange: (blur: number) => void;
+  activeBPM: number;
+  onBPMChange: (bpm: number) => void;
 }
 
 export function CanvasTools({ 
@@ -32,7 +34,8 @@ export function CanvasTools({
     activeSize, onSizeChange,
     activeWidth, onWidthChange,
     activeWaveform, onWaveformChange,
-    activeBlur, onBlurChange
+    activeBlur, onBlurChange,
+    activeBPM, onBPMChange
 }: CanvasToolsProps) {
     
     return (
@@ -126,6 +129,7 @@ export function CanvasTools({
             )}
 
             {canvasType === 'AudioVisual' && (
+              <>
                 <Card>
                     <CardHeader>
                         <CardTitle>Sound Wave</CardTitle>
@@ -148,6 +152,25 @@ export function CanvasTools({
                         </Select>
                     </CardContent>
                 </Card>
+                <Card>
+                  <CardHeader>
+                      <CardTitle>Playback Speed</CardTitle>
+                      <CardDescription>{activeBPM} BPM</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                     <div className="flex items-center gap-2">
+                          <Music className="h-4 w-4 text-muted-foreground" />
+                          <Slider
+                              value={[activeBPM]}
+                              onValueChange={(v) => onBPMChange(v[0])}
+                              min={60}
+                              max={240}
+                              step={5}
+                          />
+                      </div>
+                  </CardContent>
+                </Card>
+              </>
             )}
         </div>
     );

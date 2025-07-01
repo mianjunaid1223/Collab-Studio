@@ -25,6 +25,7 @@ export type Project = {
   canvasType: CanvasType;
   width?: number; // Optional, for grid-based modes
   height?: number; // Optional, for grid-based modes
+  maxContributions: number; // The number of contributions needed to complete the project
   createdBy: Types.ObjectId;
   creatorName: string;
   creatorAvatar: string;
@@ -42,6 +43,7 @@ export type User = {
   avatar: string;
   streak: number;
   totalContributions: number;
+  isAdmin: boolean;
 };
 
 export type Contribution = {

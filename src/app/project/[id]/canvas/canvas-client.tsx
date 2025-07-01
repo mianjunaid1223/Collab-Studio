@@ -10,7 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { CanvasSwitcher } from '@/components/canvas/canvas-switcher';
 import { CanvasTools } from '@/components/canvas/canvas-tools';
 
-export default function CanvasClient({ project, initialContributions }: { project: Project, initialContributions: Contribution[] }) {
+export default function CanvasClient({ project: initialProject, initialContributions }: { project: Project, initialContributions: Contribution[] }) {
+  const [project, setProject] = useState<Project>(initialProject);
   const [contributions, setContributions] = useState<Contribution[]>(initialContributions);
   const [isClient, setIsClient] = useState(false);
   const { user } = useAuth();
@@ -24,6 +25,7 @@ export default function CanvasClient({ project, initialContributions }: { projec
   const [activeWidth, setActiveWidth] = useState(3);
   const [activeWaveform, setActiveWaveform] = useState<"sine" | "square" | "triangle" | "sawtooth">("sine");
   const [activeBlur, setActiveBlur] = useState(8);
+  const [activeBPM, setActiveBPM] = useState(120);
 
   useEffect(() => {
     setIsClient(true);
@@ -47,6 +49,14 @@ export default function CanvasClient({ project, initialContributions }: { projec
       newSocket.on('contribution-broadcast', (newContribution: Contribution) => {
         setContributions((prev) => [...prev, newContribution]);
       });
+
+      newSocket.on('project-updated', (updatedProject: Project) => {
+        setProject(updatedProject);
+         toast({
+          title: "Project Updated!",
+          description: `Progress is now ${updatedProject.completionPercentage}%.`,
+        });
+      });
       
       newSocket.on('contribution-error', (errorMessage: string) => {
         toast({
@@ -54,7 +64,6 @@ export default function CanvasClient({ project, initialContributions }: { projec
           description: errorMessage,
           variant: "destructive",
         });
-        // A more robust implementation would roll back an optimistic update if we were using one.
       });
 
       newSocket.on('disconnect', () => {
@@ -70,8 +79,6 @@ export default function CanvasClient({ project, initialContributions }: { projec
     return () => {
       socket?.disconnect();
     };
-    // We don't include `socket` in the dependency array to prevent re-connecting on every state change.
-    // The connection should persist for the lifetime of the component.
   }, [project.id, toast]);
 
 
@@ -118,6 +125,7 @@ export default function CanvasClient({ project, initialContributions }: { projec
             activeWidth={activeWidth}
             activeWaveform={activeWaveform}
             activeBlur={activeBlur}
+            activeBPM={activeBPM}
           />
         ) : (
           <div className="flex flex-col items-center gap-4 text-muted-foreground">
@@ -160,6 +168,8 @@ export default function CanvasClient({ project, initialContributions }: { projec
              onWaveformChange={setActiveWaveform}
              activeBlur={activeBlur}
              onBlurChange={setActiveBlur}
+             activeBPM={activeBPM}
+             onBPMChange={setActiveBPM}
            />
         </div>
       </aside>

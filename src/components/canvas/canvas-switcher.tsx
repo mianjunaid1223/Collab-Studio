@@ -17,6 +17,7 @@ interface CanvasSwitcherProps {
   activeWidth: number;
   activeWaveform: 'sine' | 'square' | 'triangle' | 'sawtooth';
   activeBlur: number;
+  activeBPM: number;
 }
 
 export function CanvasSwitcher({ project, contributions, onContribute, user, ...toolProps }: CanvasSwitcherProps) {
@@ -57,6 +58,7 @@ export function CanvasSwitcher({ project, contributions, onContribute, user, ...
         onContribute={onContribute} 
         user={user}
         activeWaveform={toolProps.activeWaveform}
+        activeBPM={toolProps.activeBPM}
         />;
     default:
       return (
