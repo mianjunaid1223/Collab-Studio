@@ -7,5 +7,5 @@ export default function CanvasLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <div className="overflow-hidden h-screen w-screen">{children}</div>;
+  return <div className="overflow-hidden h-screen w-full">{children}</div>;
 }

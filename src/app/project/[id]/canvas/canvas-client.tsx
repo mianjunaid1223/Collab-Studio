@@ -114,7 +114,7 @@ export default function CanvasClient({ project: initialProject, initialContribut
   }, [project.id, project.canvasType, user, toast, socket]);
 
   return (
-    <div className="h-screen w-screen flex bg-background text-foreground">
+    <div className="h-full w-full flex bg-background text-foreground">
       
       {/* Left Panel */}
       <aside className={cn(
