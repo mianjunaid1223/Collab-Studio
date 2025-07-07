@@ -2,12 +2,13 @@
 
 import type { CanvasType } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ColorPicker } from "./color-picker";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Waves, Circle, Square, Minus, Plus, Blend, Music } from "lucide-react";
+import { Waves, Circle, Square, Minus, Plus, Blend, Music, Brush, Eraser, PaintBucket, Palette } from "lucide-react";
 
 interface CanvasToolsProps {
   canvasType: CanvasType;
@@ -25,6 +26,11 @@ interface CanvasToolsProps {
   onBlurChange: (blur: number) => void;
   activeBPM: number;
   onBPMChange: (bpm: number) => void;
+  // Paint canvas tools
+  activeTool?: string;
+  onToolChange?: (tool: string) => void;
+  activeBrushSize?: number;
+  onBrushSizeChange?: (size: number) => void;
 }
 
 export function CanvasTools({ 
@@ -35,11 +41,96 @@ export function CanvasTools({
     activeWidth, onWidthChange,
     activeWaveform, onWaveformChange,
     activeBlur, onBlurChange,
-    activeBPM, onBPMChange
+    activeBPM, onBPMChange,
+    activeTool, onToolChange,
+    activeBrushSize, onBrushSizeChange
 }: CanvasToolsProps) {
     
     return (
         <div className="space-y-4">
+            {/* Paint Canvas Tools */}
+            {canvasType === 'Paint' && (
+                <>
+                    <ColorPicker selectedColor={activeColor} onColorSelect={onColorChange} />
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Paint Tools</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Button
+                                    variant={activeTool === 'brush' ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => onToolChange?.('brush')}
+                                    className="flex items-center gap-2"
+                                >
+                                    <Brush className="h-4 w-4" />
+                                    Brush
+                                </Button>
+                                <Button
+                                    variant={activeTool === 'eraser' ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => onToolChange?.('eraser')}
+                                    className="flex items-center gap-2"
+                                >
+                                    <Eraser className="h-4 w-4" />
+                                    Eraser
+                                </Button>
+                                <Button
+                                    variant={activeTool === 'rectangle' ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => onToolChange?.('rectangle')}
+                                    className="flex items-center gap-2"
+                                >
+                                    <Square className="h-4 w-4" />
+                                    Rectangle
+                                </Button>
+                                <Button
+                                    variant={activeTool === 'circle' ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => onToolChange?.('circle')}
+                                    className="flex items-center gap-2"
+                                >
+                                    <Circle className="h-4 w-4" />
+                                    Circle
+                                </Button>
+                                <Button
+                                    variant={activeTool === 'bucket' ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => onToolChange?.('bucket')}
+                                    className="flex items-center gap-2 col-span-2"
+                                >
+                                    <PaintBucket className="h-4 w-4" />
+                                    Background
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Brush Size</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center gap-2">
+                                <Minus className="h-4 w-4 text-muted-foreground" />
+                                <Slider
+                                    value={[activeBrushSize || 5]}
+                                    onValueChange={(v) => onBrushSizeChange?.(v[0])}
+                                    min={1}
+                                    max={50}
+                                    step={1}
+                                />
+                                <Plus className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                            <div className="text-center text-sm text-muted-foreground mt-2">
+                                {activeBrushSize || 5}px
+                            </div>
+                        </CardContent>
+                    </Card>
+                </>
+            )}
+
+            {/* Mosaic Canvas Tools */}
             {canvasType === 'Mosaic' && (
                 <>
                     <ColorPicker selectedColor={activeColor} onColorSelect={onColorChange} />
@@ -63,6 +154,7 @@ export function CanvasTools({
                 </>
             )}
 
+            {/* Watercolor Canvas Tools */}
             {canvasType === 'Watercolor' && (
                  <>
                     <ColorPicker selectedColor={activeColor} onColorSelect={onColorChange} />
@@ -104,6 +196,7 @@ export function CanvasTools({
                 </>
             )}
 
+            {/* Embroidery Canvas Tools */}
             {canvasType === 'Embroidery' && (
                 <>
                     <ColorPicker selectedColor={activeColor} onColorSelect={onColorChange} />
@@ -128,6 +221,7 @@ export function CanvasTools({
                 </>
             )}
 
+            {/* AudioVisual Canvas Tools */}
             {canvasType === 'AudioVisual' && (
               <>
                 <Card>

@@ -92,4 +92,20 @@
     background: hsl(var(--accent) / 0.8);
   }
 
+  /* Custom animations for contribution highlighting */
+  @keyframes subtle-pulse {
+    0%, 100% { 
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% { 
+      transform: scale(1.05);
+      opacity: 0.9;
+    }
+  }
+
+  .animate-subtle-pulse {
+    animation: subtle-pulse 2s ease-in-out infinite;
+  }
+
 }

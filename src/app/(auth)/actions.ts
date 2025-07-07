@@ -64,18 +64,18 @@ export async function signup(values: z.infer<typeof signupSchema>) {
 }
 
 export async function login(values: z.infer<typeof loginSchema>) {
-    try {
-        const conn = await dbConnect();
-        if (!conn) {
-            return { error: 'Database is not configured. Please contact the administrator.' };
-        }
+  try {
+    const conn = await dbConnect();
+    if (!conn) {
+      return { error: 'Database is not configured. Please contact the administrator.' };
+    }
 
-        const user = await User.findOne({ email: values.email });
-        if (!user) {
-            return { error: 'Invalid email or password.' };
-        }
+    const user = await User.findOne({ email: values.email });
+    if (!user) {
+      return { error: 'Invalid email or password.' };
+    }
 
-        const isPasswordValid = await bcrypt.compare(values.password, user.password);
+    const isPasswordValid = await bcrypt.compare(values.password, (user as any).password);
         if (!isPasswordValid) {
             return { error: 'Invalid email or password.' };
         }
@@ -94,7 +94,8 @@ export async function login(values: z.infer<typeof loginSchema>) {
 }
 
 export async function logoutAction() {
-    cookies().set(COOKIE_NAME, '', { expires: new Date(0) });
+    const cookieStore = await cookies();
+    cookieStore.set(COOKIE_NAME, '', { expires: new Date(0) });
 }
 
 // --- Session Management ---
@@ -105,7 +106,8 @@ async function createAndSetSession(userId: string) {
     }
 
     const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' });
-    cookies().set(COOKIE_NAME, token, {
+    const cookieStore = await cookies();
+    cookieStore.set(COOKIE_NAME, token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         maxAge: 60 * 60 * 24 * 7, // 1 week
@@ -120,7 +122,8 @@ export async function getCurrentUser(): Promise<UserType | null> {
         return null;
     }
 
-    const token = cookies().get(COOKIE_NAME)?.value;
+    const cookieStore = await cookies();
+    const token = cookieStore.get(COOKIE_NAME)?.value;
     if (!token) return null;
 
     try {
@@ -139,14 +142,6 @@ export async function getCurrentUser(): Promise<UserType | null> {
 }
 
 // --- Data Actions ---
-
-// Default max contributions for each canvas type
-const maxContributionsMap: Record<CanvasType, number> = {
-    Mosaic: 32 * 32, // 1024
-    Embroidery: 500,
-    Watercolor: 200,
-    AudioVisual: 16 * 8, // 128
-};
 
 const createProjectSchema = z.object({
     title: z.string().min(3),
@@ -167,7 +162,6 @@ export async function createProject(values: z.infer<typeof createProjectSchema>)
         }
         const newProject = new Project({
             ...values,
-            maxContributions: maxContributionsMap[values.canvasType],
             createdBy: user.id,
             creatorName: user.name,
             creatorAvatar: user.avatar,

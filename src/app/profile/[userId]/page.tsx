@@ -7,8 +7,9 @@ import { ProjectCard } from '@/components/project/project-card';
 import { Flame, Droplets } from 'lucide-react';
 import type { Project } from '@/lib/types';
 
-export default async function ProfilePage({ params }: { params: { userId: string } }) {
-  const user = await getUserProfile(params.userId);
+export default async function ProfilePage({ params }: { params: Promise<{ userId: string }> }) {
+  const { userId } = await params;
+  const user = await getUserProfile(userId);
 
   if (!user) {
     notFound();

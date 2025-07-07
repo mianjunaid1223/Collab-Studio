@@ -18,11 +18,13 @@ const canvasModeDetails: Partial<Record<Project['canvasType'], { icon: React.Rea
   Mosaic: { icon: <Shapes className="h-4 w-4" /> },
   Watercolor: { icon: <Droplets className="h-4 w-4" /> },
   AudioVisual: { icon: <Music className="h-4 w-4" /> },
+  Paint: { icon: '🎨' },
 };
 
 
-export default async function ProjectPage({ params }: { params: { id:string } }) {
-  const project = await getProjectById(params.id);
+export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const project = await getProjectById(id);
 
   if (!project) {
     notFound();

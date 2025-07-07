@@ -31,6 +31,7 @@ const canvasModeDetails: Record<CanvasType, { icon: React.ReactNode, description
   Mosaic: { icon: <Shapes className="h-4 w-4" />, description: "Users place shape tiles on a grid." },
   Watercolor: { icon: <Droplets className="h-4 w-4" />, description: "Users drop virtual ink that spreads and blends." },
   AudioVisual: { icon: <Music className="h-4 w-4" />, description: "Users place notes to create a playable soundscape." },
+  Paint: { icon: '🎨', description: "Digital painting with brushes, shapes, and fill tools like MS Paint." },
 };
 
 export default function CreateProjectPage() {

@@ -12,7 +12,6 @@ interface CanvasProps {
   user: User | null;
   activeWaveform: 'sine' | 'square' | 'triangle' | 'sawtooth';
   activeBPM: number;
-  highlightUserId?: string | null;
 }
 
 const COLS = 16;
@@ -26,7 +25,7 @@ const waveformColors: Record<string, string> = {
     sawtooth: 'bg-destructive/80',
 };
 
-export function AudioVisualCanvas({ project, contributions, onContribute, user, activeWaveform, activeBPM, highlightUserId }: CanvasProps) {
+export function AudioVisualCanvas({ project, contributions, onContribute, user, activeWaveform, activeBPM }: CanvasProps) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentStep, setCurrentStep] = useState(-1);
 
@@ -140,11 +139,6 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
                     const noteData = grid.get(key);
                     const isActive = !!noteData;
                     
-                    // Find the contribution for highlighting
-                    const contribution = contributions.find(c => c.data?.col === col && c.data?.row === row);
-                    const isHighlighted = highlightUserId && contribution && contribution.userId.toString() === highlightUserId;
-                    const shouldDim = highlightUserId && !isHighlighted && isActive;
-                    
                     const isPlayingCol = isPlaying && col === currentStep;
                     const isPlayingNote = isPlayingCol && isActive;
 
@@ -158,9 +152,7 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
                             className={cn(
                                 'w-full h-full border-r border-b border-border/10 flex items-center justify-center transition-all duration-300',
                                 user ? 'cursor-pointer' : 'cursor-not-allowed',
-                                {'bg-primary/10': isPlayingCol && !isPlayingNote},
-                                isHighlighted && 'ring-2 ring-blue-400 ring-inset',
-                                shouldDim && 'opacity-30'
+                                {'bg-primary/10': isPlayingCol && !isPlayingNote}
                             )}
                             onClick={() => handleCellClick(col, row)}
                         >
@@ -169,7 +161,6 @@ export function AudioVisualCanvas({ project, contributions, onContribute, user, 
                                 colorClass,
                                 {
                                     'scale-125 shadow-lg shadow-destructive/50 !bg-destructive': isPlayingNote,
-                                    'scale-110 shadow-md animate-subtle-pulse': isHighlighted && !isPlayingNote,
                                 }
                             )} />
                         </div>

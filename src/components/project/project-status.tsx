@@ -1,9 +1,9 @@
 'use client';
 
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import type { Project } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { Users } from "lucide-react";
 
 type ProjectStatusProps = {
   project: Project;
@@ -29,12 +29,10 @@ export function ProjectStatus({ project }: ProjectStatusProps) {
           {project.status}
         </Badge>
       </div>
-      <div className="space-y-2">
-        <div className="flex justify-between items-center text-sm">
-          <span className="text-muted-foreground">Completion</span>
-          <span className="font-semibold">{project.completionPercentage}%</span>
-        </div>
-        <Progress value={project.completionPercentage} aria-label={`${project.completionPercentage}% complete`} />
+      <div className="flex items-center gap-2 text-sm">
+        <Users className="h-4 w-4 text-muted-foreground" />
+        <span className="text-muted-foreground">Contributors:</span>
+        <span className="font-semibold">{project.contributorCount}</span>
       </div>
     </div>
   );

@@ -85,8 +85,59 @@ export async function getProjectContributions(projectId: string): Promise<Contri
             console.warn(`Database not connected. Returning empty array for getProjectContributions(${projectId}).`);
             return [];
         }
-        const contributions = await Contribution.find({ projectId }).sort({ createdAt: 'asc' }).exec();
-        return JSON.parse(JSON.stringify(contributions));
+        
+        console.log(`Fetching contributions for project: ${projectId}`);
+        
+        // Import mongoose for ObjectId
+        const mongoose = require('mongoose');
+        
+        try {
+            // Use aggregation to populate user information
+            const contributions = await Contribution.aggregate([
+                { $match: { projectId: new mongoose.Types.ObjectId(projectId) } },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'userId',
+                        foreignField: '_id',
+                        as: 'userInfo'
+                    }
+                },
+                {
+                    $addFields: {
+                        id: { $toString: '$_id' }, // Add the virtual id field
+                        userName: { 
+                            $ifNull: [
+                                { $arrayElemAt: ['$userInfo.name', 0] },
+                                'Anonymous User'
+                            ]
+                        },
+                        userAvatar: { $arrayElemAt: ['$userInfo.avatar', 0] }
+                    }
+                },
+                { $project: { userInfo: 0 } }, // Remove the full user object
+                { $sort: { createdAt: 1 } }
+            ]);
+            
+            console.log(`Found ${contributions.length} contributions with user data`);
+            return JSON.parse(JSON.stringify(contributions));
+            
+        } catch (aggregationError) {
+            console.error(`Aggregation failed for project ${projectId}:`, aggregationError);
+            
+            // Fallback to simple query
+            const contributions = await Contribution.find({ projectId }).sort({ createdAt: 'asc' }).exec();
+            console.log(`Fallback: Found ${contributions.length} contributions without user data`);
+            
+            // Manually add id field for consistency
+            const contributionsWithId = contributions.map(c => ({
+                ...c.toObject(),
+                id: c._id.toString()
+            }));
+            
+            return JSON.parse(JSON.stringify(contributionsWithId));
+        }
+        
     } catch (error) {
         console.error(`Failed to fetch contributions for project ${projectId}:`, error);
         return [];
@@ -102,24 +153,20 @@ async function updateProjectStats(projectId: string) {
         console.error(`Project with id ${projectId} not found during stat update.`);
         return null;
     }
-
-    const completionPercentage = Math.min(
-        Math.round((contributionCount / project.maxContributions) * 100),
-        100
-    );
-    
-    project.completionPercentage = completionPercentage;
-    if (completionPercentage >= 100 && project.status !== 'Completed') {
-        project.status = 'Completed';
-    }
     
     const distinctContributors = await Contribution.distinct('userId', { projectId });
     project.contributorCount = distinctContributors.length;
 
     await project.save();
     
-    revalidatePath(`/project/${projectId}`);
-    revalidatePath('/explore');
+    // Only revalidate if we're in a Next.js request context (not Socket.IO)
+    try {
+      revalidatePath(`/project/${projectId}`);
+      revalidatePath('/explore');
+    } catch (error) {
+      // Ignore revalidation errors when called from Socket.IO or other non-Next.js contexts
+      console.log('Revalidation skipped (not in Next.js request context)');
+    }
     
     return JSON.parse(JSON.stringify(project));
 }
@@ -131,6 +178,8 @@ export async function saveContribution(
     data: any
 ): Promise<{ newContribution?: ContributionType; removedData?: any; updatedProject: ProjectType } | null> {
     try {
+        console.log(`Saving contribution for project ${projectId}, user ${userId}, type ${type}`);
+        
         const conn = await dbConnect();
         if (!conn) {
             console.error('Database is not configured. Contribution cannot be saved.');

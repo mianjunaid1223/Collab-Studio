@@ -3,7 +3,7 @@ import type { Server as NetServer, Socket } from 'net';
 import type { NextApiResponse } from 'next';
 import type { Server as SocketIOServer } from 'socket.io';
 
-export const canvasTypes = ['Embroidery', 'Mosaic', 'Watercolor', 'AudioVisual'] as const;
+export const canvasTypes = ['Embroidery', 'Mosaic', 'Watercolor', 'AudioVisual', 'Paint'] as const;
 export type CanvasType = typeof canvasTypes[number];
 
 // This type is used to attach the Socket.IO server instance to the
@@ -25,12 +25,10 @@ export type Project = {
   canvasType: CanvasType;
   width?: number; // Optional, for grid-based modes
   height?: number; // Optional, for grid-based modes
-  maxContributions: number; // The number of contributions needed to complete the project
   createdBy: Types.ObjectId;
   creatorName: string;
   creatorAvatar: string;
   status: 'Active' | 'Completed' | 'Archived';
-  completionPercentage: number;
   contributorCount: number;
   createdAt: Date;
 };
@@ -51,6 +49,8 @@ export type Contribution = {
   id: string;
   projectId: Types.ObjectId;
   userId: Types.ObjectId;
+  userName?: string; // Added for UI display
+  userAvatar?: string; // Added for UI display
   type: CanvasType;
   data: any; 
   createdAt: Date;

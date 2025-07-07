@@ -4,7 +4,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Project } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -19,6 +18,7 @@ const canvasModeDetails: Partial<Record<Project['canvasType'], { icon: React.Rea
   Mosaic: { icon: <Shapes className="h-4 w-4" />, hint: 'mosaic tiles' },
   Watercolor: { icon: <Droplets className="h-4 w-4" />, hint: 'watercolor paint' },
   AudioVisual: { icon: <Music className="h-4 w-4" />, hint: 'sound wave' },
+  Paint: { icon: '🎨', hint: 'digital paint' },
 };
 
 export function ProjectCard({ project }: ProjectCardProps) {
@@ -67,13 +67,6 @@ export function ProjectCard({ project }: ProjectCardProps) {
               <AvatarFallback>{project.creatorName.charAt(0)}</AvatarFallback>
             </Avatar>
             <span>by {project.creatorName}</span>
-          </div>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Progress</span>
-              <span className="font-mono font-medium">{project.completionPercentage}%</span>
-            </div>
-            <Progress value={project.completionPercentage} aria-label={`${project.completionPercentage}% complete`} />
           </div>
         </CardContent>
         <CardFooter className="flex justify-between text-sm text-muted-foreground border-t pt-3 pb-3 px-4">
