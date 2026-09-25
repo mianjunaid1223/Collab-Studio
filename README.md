@@ -1,5 +1,8 @@
 # Pixel Canvas Collab
 
+[![Year Built](https://img.shields.io/badge/Year%20Built-2025-blue.svg)](#)
+
+
 A collaborative digital canvas platform for mindfulness and creative teamwork. Create artwork collectively, one contribution at a time.
 
 [![Next.js](https://img.shields.io/badge/Next.js-15.3.3-black?style=flat-square&logo=next.js)](https://nextjs.org/)
