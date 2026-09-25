@@ -352,3 +352,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ---
 
 Made with ❤️ for collaborative creativity and digital mindfulness.
+
+## Recent Updates (2026)
+- Full compatibility with Next.js 15 App Router and React 18.
+- Integrated Google Genkit AI developer tooling (`npm run genkit:dev`).
+- Enhanced Socket.io real-time room communication and state synchronization.
